@@ -1,6 +1,5 @@
 import telebot
 from telebot import types
-# from telebot import apihelper
 import sqlite3
 from datetime import datetime
 import os
@@ -370,7 +369,7 @@ def upload_pic_to_drive(message):
         sql_requests(sql)
         sql_requests(sql_d)
         sql_requests(sql_d_n)
-        #main(chat_id)
+        main(chat_id)
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
         keyboard.add(*[types.KeyboardButton(name) for name in CATEGORIES])
         msg = bot.send_message(chat_id, 'Фото обновлены', reply_markup=keyboard)

@@ -48,8 +48,8 @@ def main(chat_id):
     parentID = (f_line[2].split('=')[1]).strip('\n')
     # emails=['transfer1989@gmail.com','663301@vipceiling.ru']
     creds = None
-    if os.path.exists('C:\\Bot\\token.pickle'):
-        with open('C:\\Bot\\token.pickle', 'rb') as token:
+    if os.path.exists(PATH + 'token.pickle'):
+        with open(PATH + 'token.pickle', 'rb') as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -57,17 +57,17 @@ def main(chat_id):
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'C:\\Bot\\credentials.json', SCOPES)
+                PATH + 'credentials.json', SCOPES)
             creds = flow.run_local_server()
         # Save the credentials for the next run
-        with open('C:\\Bot\\token.pickle', 'wb') as token:
+        with open(PATH + 'token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
     drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
 
     creds = None
-    if os.path.exists('C:\\Bot\\token.pickle'):
-        with open('C:\\Bot\\token.pickle', 'rb') as token:
+    if os.path.exists(PATH + 'token.pickle'):
+        with open(PATH + 'token.pickle', 'rb') as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -75,10 +75,10 @@ def main(chat_id):
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'C:\\Bot\\credentials.json', SCOPES_SHEETS)
+                PATH + 'credentials.json', SCOPES_SHEETS)
             creds = flow.run_local_server()
         # Save the credentials for the next run
-        with open('C:\\Bot\\token.pickle', 'wb') as token:
+        with open(PATH + 'token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
     sheets_service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
