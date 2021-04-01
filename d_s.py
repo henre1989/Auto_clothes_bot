@@ -11,12 +11,9 @@ import logging
 from time import sleep
 
 PATH = os.getcwd() + "/settings/"
-f = open(PATH + 'settings.txt', encoding='utf-8')
-f_line = f.readlines()
-f.close()
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SCOPES_SHEETS = ['https://www.googleapis.com/auth/spreadsheets']
-SAMPLE_SPREADSHEET_ID = (f_line[1].split('=')[1]).strip('\n')
+CATEGORY = ["Фотоотчёт по одежде", "Фотоотчёт авто"]
 
 
 def img_upload_drive(chat_id, id_folder, pics, drive_service):
@@ -30,23 +27,81 @@ def img_upload_drive(chat_id, id_folder, pics, drive_service):
         }
         media = MediaFileUpload(file_path, resumable=True)
         try:
-            r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         except HttpError as err:
             logging.info(str(chat_id) + err)
-            print(str(chat_id) + err)
             if err.resp.status in [403, 500, 503]:
                 sleep(5)
                 try:
-                    r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+                    drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
                 except HttpError as err:
                     logging.info(str(chat_id) + err + ' повторно, пропускаем ' + img)
-                    print(str(chat_id) + err + ' повторно, пропускаем ' + img)
                     continue
 
 
-def main(chat_id):
-    parentID = (f_line[2].split('=')[1]).strip('\n')
-    # emails=['transfer1989@gmail.com','663301@vipceiling.ru']
+def sql_requests(sql):
+    try:
+        conn = sqlite3.connect(PATH + "bot_sql.db")
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        if "SELECT" in sql:
+            return cursor.fetchall()
+        elif "UPDATE" in sql:
+            conn.commit()
+        elif "INSERT" in sql:
+            conn.commit()
+        elif "DELETE" in sql:
+            conn.commit()
+    except Exception as e:
+        logging.info('sql_requests ' + str(e))
+
+
+def color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i):
+    sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+              body=
+              {
+                  "requests":
+                      [
+                          {
+                              "repeatCell":
+                                  {
+                                      "cell":
+                                          {
+                                              "userEnteredFormat":
+                                                  {
+                                                      # "horizontalAlignment": 'CENTER',
+                                                      "backgroundColor": {
+                                                          "red": 0.74,
+                                                          "green": 0.93,
+                                                          "blue": 0.71,
+                                                          "alpha": 1.0
+                                                      }
+                                                      # "textFormat":
+                                                      #  {
+                                                      #    "bold": False,
+                                                      #    "fontSize": 10
+                                                      #  }
+                                                  }
+                                          },
+                                      "range":
+                                          {
+                                              "sheetId": sheetId,
+                                              "startRowIndex": i,
+                                              "endRowIndex": i + 1,
+                                              "startColumnIndex": 0,
+                                              "endColumnIndex": 7
+                                          },
+                                      "fields": "userEnteredFormat"
+                                  }
+                          }
+                      ]
+              }).execute()
+
+
+def main(chat_id, report_type):
+    f = open(PATH + 'settings.txt', encoding='utf-8')
+    f_line = f.readlines()
+    f.close()
     creds = None
     if os.path.exists(PATH + 'token.pickle'):
         with open(PATH + 'token.pickle', 'rb') as token:
@@ -82,33 +137,44 @@ def main(chat_id):
             pickle.dump(creds, token)
 
     sheets_service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
-
     chat_id = [str(chat_id)]
-    print(chat_id)
     logging.info(str(chat_id))
-    path_sql = PATH + "bot_sql.db"
-    conn = sqlite3.connect(path_sql)  # или :memory: чтобы сохранить в RAM
-    cursor = conn.cursor()
-    sql = "SELECT * FROM car WHERE chat_id=?"
     for chat_id_user in chat_id:
-        cursor.execute(sql, [chat_id_user])
-        alll = cursor.fetchall()
-        id_user = alll[0][0]
-        date_user = alll[0][5]
-        number_car = alll[0][3]
-        pices = alll[0][7].split(',')
-        last_url = alll[0][8]
-        # nm_folder=str(alll[0][1])+'-'+alll[0][2]+'-'+alll[0][3]+'-'+str(alll[0][5])+'-'+str(alll[0][6])+'-'+alll[0][4]#+'-'+str(alll[0][0])
-        nm_folder = str(alll[0][1]) + '-' + alll[0][2] + '-' + alll[0][3] + '-' + alll[0][4]  # +'-'+str(alll[0][0])
-        # print(nm_folder)
-        logging.info(str(chat_id) + ' ' + nm_folder)
-        # print(pices)
+        if report_type == CATEGORY[0]:
+            table = 'clothes'
+            parentID = (f_line[4].split('=')[1]).strip('\n')
+            SAMPLE_SPREADSHEET_ID = (f_line[3].split('=')[1]).strip('\n')
+            sql = 'SELECT employees.chat_id, employees.city, employees.fio, clothes.data, ' \
+                  'clothes.data_now, clothes.list_pic, clothes.last_url ' \
+                  'FROM employees ' \
+                  'JOIN clothes ON clothes.chat_id = employees.chat_id ' \
+                  'WHERE employees.chat_id ="' + str(chat_id_user) + '"'
+            alll = sql_requests(sql)
+            id_user = alll[0][0]
+            fio = alll[0][2]
+            date_user = alll[0][3]
+            pices = alll[0][5].split(',')
+            nm_folder = str(alll[0][1]) + '-' + alll[0][2]
+            logging.info(str(chat_id) + ' ' + nm_folder + ' для clothes')
+        elif report_type == CATEGORY[1]:
+            table = 'car'
+            parentID = (f_line[2].split('=')[1]).strip('\n')
+            SAMPLE_SPREADSHEET_ID = (f_line[1].split('=')[1]).strip('\n')
+            sql = 'SELECT employees.chat_id, employees.city, car.model, car.car_number, employees.fio, car.data, ' \
+                  'car.data_now, car.list_pic, car.last_url, car.num_STS ' \
+                  'FROM employees ' \
+                  'JOIN car ON car.chat_id = employees.chat_id ' \
+                  'WHERE employees.chat_id ="' + str(chat_id_user) + '"'
+            alll = sql_requests(sql)
+            id_user = alll[0][0]
+            date_user = alll[0][5]
+            number_car = alll[0][3]
+            pices = alll[0][7].split(',')
+            nm_folder = str(alll[0][1]) + '-' + alll[0][2] + '-' + alll[0][3] + '-' + alll[0][4]
+            logging.info(str(chat_id) + ' ' + nm_folder + ' для car')
         pics = []
         for pic in pices:
             pics.append(pic.strip('[').strip(']').strip(" ").strip("'"))
-        # print(pics)
-        # print([x for x in alll[0]])
-
         query = "'" + parentID + "'" + " in parents"
         results = drive_service.files().list(q=query, pageSize=200, fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
@@ -124,13 +190,11 @@ def main(chat_id):
             if str(date_user) == str(name_folder_drive):
                 folder_name_user_id = item['id']
                 logging.info(str(chat_id) + ' ' + 'Нашел папку в корне ' + str(name_folder_drive))
-                print(str(chat_id) + ' ' + 'Нашел папку в корне ' + str(name_folder_drive))
                 # Проверяем есть ли конечная папка в папке с датой
                 query = "'" + str(folder_name_user_id) + "'" + " in parents"
                 results = drive_service.files().list(q=query, pageSize=200,
                                                      fields="nextPageToken, files(id, name)").execute()
                 all_korn_folders = results.get('files', [])
-                print(all_korn_folders)
                 logging.info(all_korn_folders)
                 list_end_folders = []
                 # В папке с датой пусто
@@ -143,119 +207,71 @@ def main(chat_id):
                     }
                     file = drive_service.files().create(body=file_metadata, fields='id').execute()
                     id_end_folder = file.get('id')
-                    logging.info('Создали папку 113' + str(nm_folder))
+                    logging.info('Создали папку 158' + str(nm_folder))
                     list_end_folders.append(nm_folder)
                     url = 'https://drive.google.com/open?id=' + id_end_folder
-                    print(url)
-                    logging.info(str(chat_id) + ' 148 Запускаю функцию загрузки фото на drive')
+                    logging.info(str(chat_id) + ' 161 Запускаю функцию загрузки фото на drive')
                     img_upload_drive(chat_id, id_end_folder, pics, drive_service)
-                    logging.info(str(chat_id) + ' 148 Закончил')
-                    # for img in pics:
-                    #     name = img.split('/')[-1]
-                    #     #print(name)
-                    #     logging.info(str(chat_id)+'Копируем файл '+str(name))
-                    #     file_path = img
-                    #     file_metadata = {
-                    #                     'name': name,
-                    #                     'parents': [id_end_folder]
-                    #                 }
-                    #     media = MediaFileUpload(file_path, resumable=True)
-                    #     r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-
+                    logging.info(str(chat_id) + ' 163 Закончил')
                 elif len(all_korn_folders) > 0:
-
                     for korn_folder in all_korn_folders:
                         name_folder_end = korn_folder['name']
                         list_end_folders.append(name_folder_end)
-                        if number_car in name_folder_end:
-                            folder_id_last_date = korn_folder['id']
-                            print('Папка есть ' + str(korn_folder['name']))
-                            logging.info('Папка есть ' + str(korn_folder['name']))
-
-                            url = 'https://drive.google.com/open?id=' + folder_id_last_date
-                            print(url)
-                            # копируем файлы в конченую папку
-                            logging.info(str(chat_id) + ' 176 Запускаю функцию загрузки фото на drive')
-                            img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
-                            logging.info(str(chat_id) + ' 178 Закончил')
-                            # for img in pics:
-                            #     name = img.split('/')[-1]
-                            #     #print(name)
-                            #     logging.info(str(chat_id)+'Копируем файл '+str(name))
-                            #     file_path = img
-                            #     file_metadata = {
-                            #                     'name': name,
-                            #                     'parents': [folder_id_last_date]
-                            #                 }
-                            #     media = MediaFileUpload(file_path, resumable=True)
-                            #     r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                print(number_car)
-                logging.info(number_car)
-                print(list_end_folders)
+                        if report_type == CATEGORY[0]:
+                            if fio in name_folder_end:
+                                folder_id_last_date = korn_folder['id']
+                                logging.info('Папка есть ' + str(korn_folder['name']))
+                                url = 'https://drive.google.com/open?id=' + folder_id_last_date
+                                # копируем файлы в конченую папку
+                                logging.info(str(chat_id) + ' 186 Запускаю функцию загрузки на drive')
+                                img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
+                                logging.info(str(chat_id) + ' 188 Закончил')
+                                logging.info(fio)
+                        elif report_type == CATEGORY[1]:
+                            if number_car in name_folder_end:
+                                folder_id_last_date = korn_folder['id']
+                                logging.info('Папка есть ' + str(korn_folder['name']))
+                                url = 'https://drive.google.com/open?id=' + folder_id_last_date
+                                # копируем файлы в конченую папку
+                                logging.info(str(chat_id) + ' 196 Запускаю функцию загрузки на drive')
+                                img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
+                                logging.info(str(chat_id) + ' 198 Закончил')
+                                logging.info(number_car)
                 logging.info(list_end_folders)
-                if not number_car in str(list_end_folders):
-                    logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
-                    file_metadata = {
-                        'name': nm_folder,
-                        'mimeType': 'application/vnd.google-apps.folder',
-                        'parents': [id_data_folder]
-                    }
-                    file = drive_service.files().create(body=file_metadata, fields='id').execute()
-                    id_end_folder = file.get('id')
-                    logging.info('Создали папку 174 ' + str(nm_folder))
-                    url = 'https://drive.google.com/open?id=' + id_end_folder
-                    print(url)
-                    logging.info(str(chat_id) + ' 206 Запускаю функцию загрузки фото на drive')
-                    img_upload_drive(chat_id, id_end_folder, pics, drive_service)
-                    logging.info(str(chat_id) + ' 206 Закончил')
-                    # for img in pics:
-                    #     name = img.split('/')[-1]
-                    #     #print(name)
-                    #     logging.info(str(chat_id)+'Копируем файл '+str(name))
-                    #     file_path = img
-                    #     file_metadata = {
-                    #                     'name': name,
-                    #                     'parents': [id_end_folder]
-                    #                 }
-                    #     media = MediaFileUpload(file_path, resumable=True)
-                    #     try:
-                    #         r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                    #     except HttpError as err:
-                    #         logging.info(str(chat_id)+err)
-                    #         print(str(chat_id)+err)
-                    #         if err.resp.status in [403, 500, 503]:
-                    #             sleep(5)
-                    #             try:
-                    #                 r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                    #             except HttpError as err:
-                    #                 logging.info(str(chat_id)+err+' повторно, пропускаем '+img)
-                    #                 print(str(chat_id)+err+' повторно, пропускаем '+img)
-                    #                 continue
-
-                    # открываем доступ к папке с датой
-                    # for email in emails:
-                    #     batch = drive_service.new_batch_http_request(callback=callback)
-                    #     user_permission = {
-                    #         'type': 'user',
-                    #         'role': 'reader',
-                    #         'emailAddress': ''+email+''
-
-                    #     }
-                    #     batch.add(drive_service.permissions().create(
-                    #             fileId=folder_id_last_date,
-                    #             body=user_permission,
-                    #             fields='id',
-                    #     ))
-                    #     batch.execute()
-
-        # print(list_name_items)
+                if report_type == CATEGORY[0]:
+                    if not fio in str(list_end_folders):
+                        logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
+                        file_metadata = {
+                            'name': nm_folder,
+                            'mimeType': 'application/vnd.google-apps.folder',
+                            'parents': [id_data_folder]
+                        }
+                        file = drive_service.files().create(body=file_metadata, fields='id').execute()
+                        id_end_folder = file.get('id')
+                        logging.info('Создали папку 211 ' + str(nm_folder))
+                        url = 'https://drive.google.com/open?id=' + id_end_folder
+                        logging.info(str(chat_id) + ' 213 Запускаю функцию загрузки на drive')
+                        img_upload_drive(chat_id, id_end_folder, pics, drive_service)
+                        logging.info(str(chat_id) + ' 215 Закончил')
+                elif report_type == CATEGORY[1]:
+                    if not number_car in str(list_end_folders):
+                        logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
+                        file_metadata = {
+                            'name': nm_folder,
+                            'mimeType': 'application/vnd.google-apps.folder',
+                            'parents': [id_data_folder]
+                        }
+                        file = drive_service.files().create(body=file_metadata, fields='id').execute()
+                        id_end_folder = file.get('id')
+                        logging.info('Создали папку 226 ' + str(nm_folder))
+                        url = 'https://drive.google.com/open?id=' + id_end_folder
+                        logging.info(str(chat_id) + ' 228 Запускаю функцию загрузки на drive')
+                        img_upload_drive(chat_id, id_end_folder, pics, drive_service)
+                        logging.info(str(chat_id) + ' 230 Закончил')
         logging.info(list_name_items)
         logging.info(date_user)
-
         if not str(date_user) in str(list_name_items):
-            # print('Нет '+ str(date_user))
             logging.info(str(chat_id) + ' ' + 'Нет ' + str(date_user))
-            print(str(chat_id) + ' ' + 'Нет ' + str(date_user))
             # Создаем папки с датой в корневой папке
             file_metadata = {
                 'name': date_user,
@@ -264,7 +280,6 @@ def main(chat_id):
             }
             file = drive_service.files().create(body=file_metadata, fields='id').execute()
             folder_name_user_id = file.get('id')
-            # print ('Folder ID: %s' % file.get('id'))
 
             # Создаем папки конечные
             folder_id_user_id = folder_name_user_id
@@ -276,23 +291,10 @@ def main(chat_id):
             file = drive_service.files().create(body=file_metadata, fields='id').execute()
             folder_name_date_user_id = file.get('id')
             url = 'https://drive.google.com/open?id=' + folder_name_date_user_id
-            print(url)
-
             # копируем файлы в папку конечную
-            logging.info(str(chat_id) + ' 285 Запускаю функцию загрузки фото на drive')
+            logging.info(str(chat_id) + ' 255 Запускаю функцию загрузки на drive')
             img_upload_drive(chat_id, folder_name_date_user_id, pics, drive_service)
-            logging.info(str(chat_id) + ' 285 Закончил')
-            # for img in pics:
-            #     name = img.split('/')[-1]
-            #     #print(name)
-            #     logging.info(str(chat_id)+'Копируем файл '+str(name))
-            #     file_path = img
-            #     file_metadata = {
-            #                     'name': name,
-            #                     'parents': [folder_name_date_user_id]
-            #                 }
-            #     media = MediaFileUpload(file_path, resumable=True)
-            #     r = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            logging.info(str(chat_id) + ' 257 Закончил')
 
             # Создаем лист с текущим месецем
             batch_update_spreadsheet_request_body = {
@@ -314,20 +316,43 @@ def main(chat_id):
             request = sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
                                                                 body=batch_update_spreadsheet_request_body)
             try:
-                response = request.execute()
+                request.execute()
                 logging.info(str(chat_id) + 'Создан лист ' + str(date_user))
             except Exception as e:
-                print(e)
-                logging.info(e)
+                logging.info(str(chat_id_user) + str(e))
             # Заполняем заголовки
             try:
+                if report_type == CATEGORY[0]:
+                    values_title_sh = [['Дата фотоотчёта'], ['Город'], ['ФИО'], ['Ссылка на актуальную папку']]
+                    sql = 'SELECT employees.chat_id, employees.city, employees.fio, clothes.data, clothes.data_now' \
+                          ', clothes.list_pic, clothes.last_url ' \
+                          'FROM employees ' \
+                          'JOIN clothes ON clothes.chat_id = employees.chat_id'
+                    line_sql = sql_requests(sql)
+                    count_id = len(line_sql)
+                    logging.info(str(chat_id) + ' Кол-во записей в базе clothes ' + str(count_id))
 
-                values_title_sh = [['Дата фотоотчёта'], ['Город'], ['Модель'], ['Гос. номер'], ['Номер СТС'], ['ФИО'],
-                                   ['Ссылка на актуальную папку']]
-                results = sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
+                    range_a = '!A1:D1'
+                    key = ':D'
+                elif report_type == CATEGORY[1]:
+                    values_title_sh = [['Дата фотоотчёта'], ['Город'], ['Модель'], ['Гос. номер'], ['Номер СТС'],
+                                       ['ФИО'],
+                                       ['Ссылка на актуальную папку']]
+                    sql = 'SELECT employees.chat_id, employees.city, car.model, car.car_number, employees.fio, ' \
+                          'car.data, ' \
+                          'car.data_now, car.list_pic, car.last_url, car.num_STS ' \
+                          'FROM employees ' \
+                          'JOIN car ON car.chat_id = employees.chat_id'
+                    line_sql = sql_requests(sql)
+                    count_id = len(line_sql)
+                    logging.info(str(chat_id) + ' Кол-во записей в базе car ' + str(count_id))
+
+                    range_a = '!A1:G1'
+                    key = ':G'
+                sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
                     "valueInputOption": "USER_ENTERED",
                     "data": [
-                        {"range": "" + date_user + "!A1:J1",
+                        {"range": "" + date_user + range_a,
                          "majorDimension": "COLUMNS",
                          # сначала заполнять ряды, затем столбцы (т.е. самые внутренние списки в values - это ряды)
                          "values": values_title_sh}
@@ -335,127 +360,97 @@ def main(chat_id):
                 }).execute()
 
                 # заполняем новый лист базовыми значения из базы данны(Город, Модель, Гос. номер, ФИО)
-                sql = "SELECT * FROM car"
-                cursor.execute(sql)
-                line_sql = cursor.fetchall()
-                count_id = len(line_sql)
-                print(line_sql)
-
-                logging.info(str(chat_id) + 'Кол-во записей в базе данных ' + str(count_id))
-                print(str(chat_id) + 'Кол-во записей в базе данных ' + str(count_id))
                 j = 2
                 for line in line_sql:
-                    results = sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                                                                 body={
-                                                                                     "valueInputOption": "USER_ENTERED",
-                                                                                     "data": [
-                                                                                         {
-                                                                                             "range": "" + date_user + "!A" + str(
-                                                                                                 j) + ":G" + str(j),
-                                                                                             "majorDimension": "COLUMNS",
-                                                                                             "values": [[line[6]],
-                                                                                                        [line[1]],
-                                                                                                        [line[2]],
-                                                                                                        [line[3]],
-                                                                                                        [line[9]],
-                                                                                                        [line[4]],
-                                                                                                        [line[8]]]}
-                                                                                     ]
-                                                                                 }).execute()
+                    if report_type == CATEGORY[0]:
+                        val_list = [[line[4]], [line[1]], [line[2]], [line[6]]]
+                    elif report_type == CATEGORY[1]:
+                        val_list = [[line[6]], [line[1]], [line[2]], [line[3]], [line[9]], [line[4]], [line[8]]]
+                    sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                                                       body={
+                                                                           "valueInputOption": "USER_ENTERED",
+                                                                           "data": [
+                                                                               {
+                                                                                   "range": "" + date_user + "!A" + str(
+                                                                                       j) + key + str(j),
+                                                                                   "majorDimension": "COLUMNS",
+                                                                                   "values": val_list}
+                                                                           ]
+                                                                       }).execute()
                     sleep(1)
-                    # print(line)
-                    # print(type(line[4]))
-                    if line[4] is None:
-                        logging.info(line[1] + ' ' + line[2] + ' ' + line[3])
-                        print(line[1] + ' ' + line[2] + ' ' + line[3])
+                    if report_type == CATEGORY[0]:
+                        logging.info(line[1] + ' ' + line[2])
                         j += 1
-                    else:
-                        logging.info(line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
-                        print(line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
-                        j += 1
+
+                    elif report_type == CATEGORY[1]:
+                        if line[4] is None:
+                            logging.info(line[1] + ' ' + line[2] + ' ' + line[3])
+                            j += 1
+                        else:
+                            logging.info(line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
+                            j += 1
                 logging.info(
                     str(chat_id) + 'Заполняем заголовок листа ' + str(date_user) + ' и основые данные из базы данных')
-
                 spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
                 sheetList = spreadsheet.get('sheets')
                 for sheet in sheetList:
                     if sheet['properties']['title'] == date_user:
                         sheetId = sheet['properties']['sheetId']
-                        # logging.info()
                         break
-
-                results = sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                                                    body=
-                                                                    {
-                                                                        "requests":
-                                                                            [
-                                                                                {
-                                                                                    "sortRange":
-                                                                                        {
-                                                                                            "range":
-                                                                                                {
-                                                                                                    "sheetId": sheetId,
-                                                                                                    "startRowIndex": 1,
-                                                                                                    "endRowIndex": 200,
-                                                                                                    "startColumnIndex": 0,
-                                                                                                    "endColumnIndex": 7
-                                                                                                },
-                                                                                            "sortSpecs": [
-                                                                                                {
-                                                                                                    "dimensionIndex": 1,
-                                                                                                    "sortOrder": "ASCENDING"
-                                                                                                },
-                                                                                                {
-                                                                                                    "dimensionIndex": 2,
-                                                                                                    "sortOrder": "ASCENDING"
-                                                                                                },
-                                                                                                {
-                                                                                                    "dimensionIndex": 3,
-                                                                                                    "sortOrder": "ASCENDING"
-                                                                                                }
-                                                                                            ]
-                                                                                        }
-                                                                                }
-                                                                            ]
-                                                                    }).execute()
+                sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                                          body=
+                                                          {
+                                                              "requests":
+                                                                  [
+                                                                      {
+                                                                          "sortRange":
+                                                                              {
+                                                                                  "range":
+                                                                                      {
+                                                                                          "sheetId": sheetId,
+                                                                                          "startRowIndex": 1,
+                                                                                          "endRowIndex": 200,
+                                                                                          "startColumnIndex": 0,
+                                                                                          "endColumnIndex": 7
+                                                                                      },
+                                                                                  "sortSpecs": [
+                                                                                      {
+                                                                                          "dimensionIndex": 1,
+                                                                                          "sortOrder": "ASCENDING"
+                                                                                      },
+                                                                                      {
+                                                                                          "dimensionIndex": 2,
+                                                                                          "sortOrder": "ASCENDING"
+                                                                                      },
+                                                                                      {
+                                                                                          "dimensionIndex": 3,
+                                                                                          "sortOrder": "ASCENDING"
+                                                                                      }
+                                                                                  ]
+                                                                              }
+                                                                      }
+                                                                  ]
+                                                          }).execute()
             except Exception as e:
-                print(e)
-                logging.info(e)
-
-        # Проверяем что в текущей книге есть лист с нужной датой
-        # results = sheets_service.spreadsheets().get(spreadsheetId = SAMPLE_SPREADSHEET_ID, fields='sheets.properties').execute()
-        # print(results['sheets'])
-        # logging.info(results['sheets'])
-        # for sh in results['sheets']:
-        #     sh=(sh['properties'])
-        #     sh_name=sh['title']
-        #     sh_id=sh['sheetId']
-
-        #     if date_user == sh_name:
-        #         print(sh_id)
-        #         logging.info(sh_id)
-
+                logging.info(str(chat_id_user) + str(e))
         # заносим в sql ссылку на папку гугл диска
-        conn = sqlite3.connect(PATH + "bot_sql.db")  # или :memory: чтобы сохранить в RAM
-        cursor = conn.cursor()
         sql = """
-        UPDATE car 
+        UPDATE """ + table + """ 
         SET last_url = \"""" + str(url) + """\"
         WHERE chat_id = '""" + str(id_user) + """'
             """
-        cursor.execute(sql)
-        conn.commit()
-
+        sql_requests(sql)
         spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
         sheetList = spreadsheet.get('sheets')
         for sheet in sheetList:
             if sheet['properties']['title'] == date_user:
                 sheetId = sheet['properties']['sheetId']
-                # logging.info()
                 break
-
         try:
-            range_ = date_user + '!D1:200'
+            if report_type == CATEGORY[0]:
+                range_ = date_user + '!C1:200'
+            elif report_type == CATEGORY[1]:
+                range_ = date_user + '!D1:200'
             request = sheets_service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_)
             response = request.execute()
             sleep(1)
@@ -464,129 +459,67 @@ def main(chat_id):
             in_table = False
             for i in range(1, k):
                 try:
-                    if r[i][0] == number_car:
-                        logging.info(
-                            str(chat_id[0]) + ' Нашел номер ' + str(number_car) + ' в табилце ' + str(date_user))
-                        print(str(chat_id[0]) + ' Нашел номер ' + str(number_car) + ' в табилце ' + str(date_user))
-                        results = sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                                                            body=
-                                                                            {
-                                                                                "requests":
-                                                                                    [
-                                                                                        {
-                                                                                            "repeatCell":
-                                                                                                {
-                                                                                                    "cell":
-                                                                                                        {
-                                                                                                            "userEnteredFormat":
-                                                                                                                {
-                                                                                                                    # "horizontalAlignment": 'CENTER',
-                                                                                                                    "backgroundColor": {
-                                                                                                                        "red": 0.74,
-                                                                                                                        "green": 0.93,
-                                                                                                                        "blue": 0.71,
-                                                                                                                        "alpha": 1.0
-                                                                                                                    }
-                                                                                                                    # "textFormat":
-                                                                                                                    #  {
-                                                                                                                    #    "bold": False,
-                                                                                                                    #    "fontSize": 10
-                                                                                                                    #  }
-                                                                                                                }
-                                                                                                        },
-                                                                                                    "range":
-                                                                                                        {
-                                                                                                            "sheetId": sheetId,
-                                                                                                            "startRowIndex": i,
-                                                                                                            "endRowIndex": i + 1,
-                                                                                                            "startColumnIndex": 0,
-                                                                                                            "endColumnIndex": 7
-                                                                                                        },
-                                                                                                    "fields": "userEnteredFormat"
-                                                                                                }
-                                                                                        }
-                                                                                    ]
-                                                                            }).execute()
-                        logging.info(str(chat_id) + ' Цвет строки ' + str(i + 1) + ' закрашен')
-                        results = sheets_service.spreadsheets().values().batchUpdate(
-                            spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
-                                "valueInputOption": "USER_ENTERED",
-                                "data": [
-                                    {"range": "" + date_user + "!A" + str(i + 1) + ":J" + str(i + 1),
-                                     "majorDimension": "COLUMNS",
-                                     # сначала заполнять ряды, затем столбцы (т.е. самые внутренние списки в values - это ряды)
-                                     "values": [[alll[0][6]], [alll[0][1]], [alll[0][2]], [alll[0][3]], [alll[0][9]],
-                                                [alll[0][4]], [url]]}
-                                ]
-                            }).execute()
-                        logging.info(str(chat_id) + ' инф в строку ' + str(i + 1) + ' занесена ')
-                        logging.info(str(chat_id) + ' Обновлены данные в листе ' + str(date_user))
-                        in_table = True
-                        break
-                    # else:
-                    #     print('Номера в таблице нет')
+                    if report_type == CATEGORY[0]:
+                        if r[i][0] == fio:
+                            logging.info(
+                                str(chat_id[0]) + ' Нашел ФИО ' + str(fio) + ' в табилце ' + str(date_user))
+                            values = [[alll[0][4]], [alll[0][1]], [alll[0][2]], [url]]
+                            color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i)
+                            logging.info(str(chat_id) + ' Цвет строки ' + str(i + 1) + ' закрашен')
+                            range_ = date_user + "!A" + str(i + 1) + ":D" + str(i + 1)
+                            sheets_service.spreadsheets().values().batchUpdate(
+                                spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
+                                    "valueInputOption": "USER_ENTERED",
+                                    "data": [
+                                        {"range": range_,
+                                         "majorDimension": "COLUMNS",
+                                         "values": values}
+                                    ]
+                                }).execute()
+                            logging.info(str(chat_id) + ' инф в строку ' + str(i + 1) + ' занесена ')
+                            logging.info(str(chat_id) + ' Обновлены данные в листе ' + str(date_user))
+                            in_table = True
+                            break
+                    elif report_type == CATEGORY[1]:
+                        if r[i][0] == number_car:
+                            logging.info(
+                                str(chat_id[0]) + ' Нашел номер ' + str(number_car) + ' в табилце ' + str(date_user))
+                            values = [[alll[0][6]], [alll[0][1]], [alll[0][2]], [alll[0][3]], [alll[0][9]],
+                                      [alll[0][4]], [url]]
+                            color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i)
+                            logging.info(str(chat_id) + ' Цвет строки ' + str(i + 1) + ' закрашен')
+                            sheets_service.spreadsheets().values().batchUpdate(
+                                spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
+                                    "valueInputOption": "USER_ENTERED",
+                                    "data": [
+                                        {"range": "" + date_user + "!A" + str(i + 1) + ":G" + str(i + 1),
+                                         "majorDimension": "COLUMNS",
+                                         # сначала заполнять ряды, затем столбцы (т.е. самые внутренние списки в values - это ряды)
+                                         "values": values}
+                                    ]
+                                }).execute()
+                            logging.info(str(chat_id) + ' инф в строку ' + str(i + 1) + ' занесена ')
+                            logging.info(str(chat_id) + ' Обновлены данные в листе ' + str(date_user))
+                            in_table = True
+                            break
                 except KeyError:
-                    print('Пустая ячейка ' + range_)
                     logging.info('Пустая ячейка ' + range_)
                     break
             if in_table is False:
-                results = sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                                                    body=
-                                                                    {
-                                                                        "requests":
-                                                                            [
-                                                                                {
-                                                                                    "repeatCell":
-                                                                                        {
-                                                                                            "cell":
-                                                                                                {
-                                                                                                    "userEnteredFormat":
-                                                                                                        {
-                                                                                                            # "horizontalAlignment": 'CENTER',
-                                                                                                            "backgroundColor": {
-                                                                                                                "red": 0.74,
-                                                                                                                "green": 0.93,
-                                                                                                                "blue": 0.71,
-                                                                                                                "alpha": 1.0
-                                                                                                            }
-                                                                                                            # "textFormat":
-                                                                                                            #  {
-                                                                                                            #    "bold": False,
-                                                                                                            #    "fontSize": 10
-                                                                                                            #  }
-                                                                                                        }
-                                                                                                },
-                                                                                            "range":
-                                                                                                {
-                                                                                                    "sheetId": sheetId,
-                                                                                                    "startRowIndex": k,
-                                                                                                    "endRowIndex": k + 1,
-                                                                                                    "startColumnIndex": 0,
-                                                                                                    "endColumnIndex": 7
-                                                                                                },
-                                                                                            "fields": "userEnteredFormat"
-                                                                                        }
-                                                                                }
-                                                                            ]
-                                                                    }).execute()
-                results = sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
+                if report_type == CATEGORY[0]:
+                    values = [[alll[0][4]], [alll[0][1]], [alll[0][2]], [url]]
+                elif report_type == CATEGORY[1]:
+                    values = [[alll[0][6]], [alll[0][1]], [alll[0][2]], [alll[0][3]], [alll[0][9]], [alll[0][4]], [url]]
+                color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, k)
+                sheets_service.spreadsheets().values().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
                     "valueInputOption": "USER_ENTERED",
                     "data": [
                         {"range": "" + date_user + "!A" + str(k + 1) + ":J" + str(k + 1),
                          "majorDimension": "COLUMNS",
                          # сначала заполнять ряды, затем столбцы (т.е. самые внутренние списки в values - это ряды)
-                         "values": [[alll[0][6]], [alll[0][1]], [alll[0][2]], [alll[0][3]], [alll[0][9]], [alll[0][4]],
-                                    [url]]}
+                         "values": values}
                     ]
                 }).execute()
                 logging.info(str(chat_id) + ' Записаны новые данные в лист ' + str(date_user))
         except Exception as e:
-            print(e)
-
-
-def callback(request_id, response, exception):
-    if exception:
-        print(exception)
-        logging.info(exception)
-    else:
-        logging.info("Permission Id: %s" % response.get('id'))
+            logging.info(str(chat_id_user) + str(e))

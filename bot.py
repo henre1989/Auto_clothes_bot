@@ -9,7 +9,6 @@ from time import sleep
 from d_s import main
 import threading
 
-# PATH="C:/bot/"
 PATH = os.getcwd() + "/settings/"
 f = open(PATH + 'settings.txt', encoding='utf-8')
 f_line = f.readlines()
@@ -30,6 +29,7 @@ user_dict = {}
 class User:
     def __init__(self, name):
         self.name = name
+        self.category = None
         self.model = None
         self.car_number = None
         self.fio = None
@@ -254,16 +254,12 @@ def check_data_about_car(message):
         if name == 'Нет':
             keyboard.add(
                 *[types.KeyboardButton(name) for name in ['Ravon R2', 'Daewoo Matiz', 'Lada Largus', 'Renault Cangoo']])
-            user = User(name)
-            user_dict[chat_id] = user
             logging.info(str(chat_id) + ' ' + str(message.text))
             msg = bot.send_message(chat_id, 'Выберите модель машины, если вашей модели в списке нет, напишите вручную',
                                    reply_markup=keyboard)
             bot.register_next_step_handler(msg, add_model_car)
         else:
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
-            user = User(name)
-            user_dict[chat_id] = user
             photo = open(PATH + 'basic_photo.jpg', 'rb')
             today = datetime.now()
             week = today.isocalendar()[1] - 1
@@ -273,7 +269,7 @@ def check_data_about_car(message):
             bot.send_photo(chat_id, photo)
             photo.close()
             bot.reply_to(message, 'Прикрепите 3 новых фото автомобиля согласно образцу и нажмите Зaгрузить',
-                               reply_markup=keyboard)
+                         reply_markup=keyboard)
     except Exception as e:
         logging.info(str(chat_id) + ' check_data_about_car ' + str(e))
         msg = bot.reply_to(message, 'Введены неверные данные, попробуйте еще раз')
@@ -344,35 +340,46 @@ def upload_pic_to_drive(message):
         date_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
         chat_id = message.chat.id
         user = user_dict[chat_id]
-        bot.send_message(chat_id, 'Фото обрабатываются... подождите несколько секунд')
-        print(user.pic)
+        if user.name == "Фотоотчёт по одежде":
+            bot.send_message(chat_id, 'Видео обрабатывается... подождите несколько секунд')
+            table = 'clothes'
+            if len(user.pic) == 0:
+                msg = bot.reply_to(message, 'Прикрепите видео и нажмите Загрузить')
+                bot.register_next_step_handler(msg, send_photo)
+                return
+
+        elif user.name == "Фотоотчёт авто":
+            bot.send_message(chat_id, 'Фото обрабатываются... подождите несколько секунд')
+            table = 'car'
+            if len(user.pic) == 0:
+                msg = bot.reply_to(message, 'Прикрепите фото и нажмите Загрузить')
+                bot.register_next_step_handler(msg, send_photo)
+                return
+
         logging.info(str(chat_id) + ' ' + str(user.pic))
-        if len(user.pic) == 0:
-            msg = bot.reply_to(message, 'Прикрепите фото и нажмите Загрузить')
-            bot.register_next_step_handler(msg, send_photo)
-            return
+
         sql = """
-        UPDATE car 
+        UPDATE """ + table + """ 
         SET list_pic = \"""" + str(user.pic) + """\"
         WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_d = """
-            UPDATE car 
+            UPDATE """ + table + """ 
             SET data = '""" + str(date_now) + """'
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_d_n = """
-            UPDATE car 
+            UPDATE """ + table + """ 
             SET data_now = '""" + str(data_now) + """'
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_requests(sql)
         sql_requests(sql_d)
         sql_requests(sql_d_n)
-        main(chat_id)
+        main(chat_id, user.name)
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-        keyboard.add(*[types.KeyboardButton(name) for name in CATEGORIES])
-        msg = bot.send_message(chat_id, 'Фото обновлены', reply_markup=keyboard)
+        keyboard.add(*[types.KeyboardButton(name) for name in ['В главное меню']])
+        msg = bot.send_message(chat_id, 'Данные обновлены', reply_markup=keyboard)
         logging.info(str(chat_id) + ' ' + str(user.pic) + ' Данные обновлены')
         bot.register_next_step_handler(msg, send_welcome)
     except Exception as e:
@@ -382,22 +389,23 @@ def upload_pic_to_drive(message):
 
 def check_car_and_clothes(message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    keyboard.add(
-        *[types.KeyboardButton(name) for name in ['Ravon R2', 'Daewoo Matiz', 'Lada Largus', 'Renault Cangoo']])
     try:
         chat_id = message.chat.id
         name = message.text
         if name == 'Фотоотчёт по одежде':
-            # записать категорию в класс
-            sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
-            clothes = sql_requests(sql)
-            if len(clothes) > 0:
-                msg = bot.send_message(chat_id, 'Ошибка, о вас нет данных, сначала заполните Фотоотчёт')
-                bot.register_next_step_handler(msg, check_car_and_clothes)
-            else:
-                msg = bot.send_message(chat_id, 'Ошибка, о вас нет данных, сначала заполните Фотоотчёт')
-                bot.register_next_step_handler(msg, check_car_and_clothes)
+            user = User(name)
+            user_dict[chat_id] = user
+            user_dict[chat_id].category = name
+            keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
+            bot.send_message(chat_id, 'Необходимо снять видео и произнести секретный код. На нем мы должны четко '
+                                      'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
+                             reply_markup=keyboard)
         elif name == 'Фотоотчёт авто':
+            user = User(name)
+            user_dict[chat_id] = user
+            user_dict[chat_id].category = name
+            keyboard.add(
+                *[types.KeyboardButton(name) for name in ['Ravon R2', 'Daewoo Matiz', 'Lada Largus', 'Renault Cangoo']])
             # записать категорию в класс
             sql = 'SELECT * FROM car WHERE chat_id="' + str(chat_id) + '"'
             cars = sql_requests(sql)
@@ -414,15 +422,14 @@ def check_car_and_clothes(message):
                     model,
                     number,
                     number_STS
-                    ))
+                ))
                 msg = bot.reply_to(message, 'Подтвердите что эти данные актуальны для вас', reply_markup=keyboard)
                 bot.register_next_step_handler(msg, check_data_about_car)
             else:
                 bot.reply_to(message, 'Данных об автомобиле не обнаружено')
-                user = User(name)
-                user_dict[chat_id] = user
-                msg = bot.send_message(chat_id, 'Выберите модель машины, если вашей модели в списке нет, напишите вручную',
-                                   reply_markup=keyboard)
+                msg = bot.send_message(chat_id,
+                                       'Выберите модель машины, если вашей модели в списке нет, напишите вручную',
+                                       reply_markup=keyboard)
                 bot.register_next_step_handler(msg, add_model_car)
     except Exception as e:
         logging.info(str(chat_id) + ' check_car_and_clothes ' + str(e))
@@ -559,61 +566,7 @@ def add_num_sts(message):
         bot.register_next_step_handler(msg, add_num_sts)
 
 
-def process_fio_step(message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-    keyboard.add(*[types.KeyboardButton(name) for name in ['/Загрузить']])
-    try:
-        chat_id = message.chat.id
-        fio = message.text
-        if message.text is None:
-            msg = bot.reply_to(message, 'Введены неверные данные, попробуйте еще раз')
-            bot.register_next_step_handler(msg, process_fio_step)
-        else:
-            logging.info(str(chat_id) + ' ' + str(message.text))
-            alf = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
-            text = fio.lower()
-            name_spl = text.split(' ')
-            if len(name_spl) == 3:
-                for spl1 in name_spl[0]:
-                    if not spl1 in alf:
-                        msg = bot.reply_to(message, 'в поле ФИО введены недопустимые символы, ввод только кириллицей')
-                        bot.register_next_step_handler(msg, process_fio_step)
-                        return
-                    for spl2 in name_spl[1]:
-                        if not spl2 in alf:
-                            msg = bot.reply_to(message,
-                                               'в поле ФИО введены недопустимые символы, ввод только кириллицей')
-                            bot.register_next_step_handler(msg, process_fio_step)
-                            return
-                        for spl3 in name_spl[2]:
-                            if not spl3 in alf:
-                                msg = bot.reply_to(message,
-                                                   'в поле ФИО введены недопустимые символы, ввод только кириллицей')
-                                bot.register_next_step_handler(msg, process_fio_step)
-                                return
-                Name = ''
-                for i in name_spl:
-                    name_i = i.capitalize()
-                    Name = Name + name_i + ' '
-                user = user_dict[chat_id]
-                user.fio = Name
-                logging.info(str(chat_id) + ' ' + str(message.text))
-                photo = open(PATH + 'basic_photo.jpg', 'rb')
-                bot.send_photo(chat_id, photo)
-                photo.close()
-                bot.reply_to(message, 'Прикрепите 3 новых фото автомобиля согласно образцу и нажмите Загрузить',
-                                   reply_markup=keyboard)
-            else:
-                msg = bot.reply_to(message, 'Необходимо ввести ФИО полностью')
-                bot.register_next_step_handler(msg, process_fio_step)
-                return
-    except Exception as e:
-        logging.info(str(chat_id) + ' process_fio_step ' + str(e))
-        msg = bot.reply_to(message, 'Введены неверные данные, попробуйте еще раз')
-        bot.register_next_step_handler(msg, process_fio_step)
-
-
-@bot.message_handler(content_types=['photo'])
+@bot.message_handler(content_types=['photo', 'video'])
 def send_photo(message):
     try:
         path = PATH
@@ -636,34 +589,68 @@ def send_photo(message):
             os.mkdir(Path)
         except IOError:
             pass
-        try:
-            os.mkdir(Path + '\\photo_auto')
-            os.mkdir(Path + '\\photo_clothes')
-        except IOError:
-            pass
-        try:
-            os.mkdir(Path + '\\photo_auto' + '\\' + date_now)
-            os.mkdir(Path + '\\photo_clothes' + '\\' + date_now)
-        except IOError:
-            pass
-        print(chat_id)
-        photo = message.photo[-1]
-        print(message.photo)
-        print(photo)
-        file_info = bot.get_file(photo.file_id)
-        print(file_info)
+        if user.category == 'Фотоотчёт авто':
+            logging.info(str(chat_id) + ' категория ' + user.category)
+            if message.content_type == 'photo':
+                logging.info(str(chat_id) + ' тип контента ' + message.content_type)
+                try:
+                    os.mkdir(Path + '\\photo_auto')
+                except IOError:
+                    pass
+                try:
+                    os.mkdir(Path + '\\photo_auto' + '\\' + date_now)
+                except IOError:
+                    pass
+                photo = message.photo[-1]
+                file_info = bot.get_file(photo.file_id)
+                file_name = file_info.file_path.strip('photos')
+                src = Path + '\\photo_auto' + '\\' + date_now + file_name
+            else:
+                msg = bot.reply_to(message, 'Не верный тип контента, загрузите фотографии и нажимите кнопку '
+                                            'Загрузить')
+                bot.register_next_step_handler(msg, send_photo)
+        elif user.category == 'Фотоотчёт по одежде':
+            logging.info(str(chat_id) + ' категория ' + user.category)
+            if message.content_type == 'video':
+                logging.info(str(chat_id) + ' тип контента ' + message.content_type)
+                try:
+                    os.mkdir(Path + '\\photo_clothes')
+                except IOError:
+                    pass
+                try:
+                    os.mkdir(Path + '\\photo_clothes' + '\\' + date_now)
+                except IOError:
+                    pass
+                video = message.video
+                file_info = bot.get_file(video.file_id)
+                file_name = file_info.file_path.strip('videos')
+                src = Path + '\\photo_clothes' + '\\' + date_now + file_name
+                sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
+                cl_list = sql_requests(sql)
+                if len(cl_list) > 0:
+                    sql = """UPDATE clothes
+                                                    SET data = '""" + str(date_now) + """', data_now = '""" + str(
+                        today.date()) + """', list_pic = \"""" + src + """\"
+                                                    WHERE chat_id = '""" + str(chat_id) + """'
+                                                    """
+                    sql_requests(sql)
+                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, данные обновелны')
+                else:
+                    sql = """INSERT INTO clothes VALUES ('""" + str(
+                        chat_id) + """', '""" + str(date_now) + """' , '""" + str(today.date()) + """',
+                        '""" + src + """', '')"""
+                    sql_requests(sql)
+                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
+            else:
+                msg = bot.reply_to(message, 'Не верный тип контента, загрузите видео и нажимите кнопку Загрузить')
+                bot.register_next_step_handler(msg, send_photo)
         downloaded_file = bot.download_file(file_info.file_path)
-        file_name = file_info.file_path.strip('photos')
-        src = Path + '\\photo_auto' + '\\' + date_now + file_name
         with open(src, 'wb') as new_file:
             new_file.write(downloaded_file)
-        print(src)
         user.pic.append(src)
         logging.info("файл добавлен " + src)
     except Exception as e:
         logging.info(str(chat_id) + ' send_photo ' + str(e))
-        msg = bot.reply_to(message, 'Прикрепите фото и нажмите Загрузить', reply_markup=types.ReplyKeyboardRemove())
-        bot.register_next_step_handler(msg, send_photo)
         return
 
 
