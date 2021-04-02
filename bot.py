@@ -50,7 +50,7 @@ def one_massage():
         elif chat_id == '':
             continue
         try:
-            locale.setlocale(locale.LC_ALL, "ru")
+            locale.setlocale(locale.LC_ALL,'ru_RU.UTF-8')
             today = datetime.today().strftime("%d %b")
             bot.send_message(chat_id, 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
                                       'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
