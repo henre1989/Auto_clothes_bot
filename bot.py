@@ -397,7 +397,8 @@ def check_car_and_clothes(message):
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
-            bot.send_message(chat_id, 'Необходимо снять видео и произнести секретный код. На нем мы должны четко '
+            bot.send_message(chat_id, 'Необходимо снять видео и произнести секретный код и отправить (видео должно '
+                                      'быть меньше 20 мб). На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
         elif name == 'Фотоотчёт авто':
@@ -572,6 +573,10 @@ def send_photo(message):
         path = PATH
         chat_id = message.chat.id
         try:
+            logging.info(str(chat_id) + ' тип контента ' + message.content_type)
+        except Exception:
+            pass
+        try:
             mess = message.text
             user = user_dict[chat_id]
         except KeyError:
@@ -594,17 +599,17 @@ def send_photo(message):
             if message.content_type == 'photo':
                 logging.info(str(chat_id) + ' тип контента ' + message.content_type)
                 try:
-                    os.mkdir(Path + '\\photo_auto')
+                    os.mkdir(Path + '/photo_auto')
                 except IOError:
                     pass
                 try:
-                    os.mkdir(Path + '\\photo_auto' + '\\' + date_now)
+                    os.mkdir(Path + '/photo_auto' + '/' + date_now)
                 except IOError:
                     pass
                 photo = message.photo[-1]
                 file_info = bot.get_file(photo.file_id)
                 file_name = file_info.file_path.strip('photos')
-                src = Path + '\\photo_auto' + '\\' + date_now + file_name
+                src = Path + '/photo_auto' + '/' + date_now + file_name
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите фотографии и нажимите кнопку '
                                             'Загрузить')
@@ -614,33 +619,40 @@ def send_photo(message):
             if message.content_type == 'video':
                 logging.info(str(chat_id) + ' тип контента ' + message.content_type)
                 try:
-                    os.mkdir(Path + '\\photo_clothes')
+                    os.mkdir(Path + '/photo_clothes')
                 except IOError:
                     pass
                 try:
-                    os.mkdir(Path + '\\photo_clothes' + '\\' + date_now)
+                    os.mkdir(Path + '/photo_clothes' + '/' + date_now)
                 except IOError:
                     pass
                 video = message.video
-                file_info = bot.get_file(video.file_id)
-                file_name = file_info.file_path.strip('videos')
-                src = Path + '\\photo_clothes' + '\\' + date_now + file_name
-                sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
-                cl_list = sql_requests(sql)
-                if len(cl_list) > 0:
-                    sql = """UPDATE clothes
-                                                    SET data = '""" + str(date_now) + """', data_now = '""" + str(
-                        today.date()) + """', list_pic = \"""" + src + """\"
-                                                    WHERE chat_id = '""" + str(chat_id) + """'
-                                                    """
-                    sql_requests(sql)
-                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, данные обновелны')
+                #до 20 мб
+                size_video = int(video.file_size)/1024/1024
+                if size_video > 20:
+                    msg = bot.reply_to(message, 'Видео больше 20 мб, пожалуйста отправте видео меньшего размера')
+                    bot.register_next_step_handler(msg, send_photo)
                 else:
-                    sql = """INSERT INTO clothes VALUES ('""" + str(
-                        chat_id) + """', '""" + str(date_now) + """' , '""" + str(today.date()) + """',
-                        '""" + src + """', '')"""
-                    sql_requests(sql)
-                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
+                    logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
+                    file_info = bot.get_file(video.file_id)
+                    file_name = file_info.file_path.strip('videos')
+                    src = Path + '/photo_clothes' + '/' + date_now + file_name
+                    sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
+                    cl_list = sql_requests(sql)
+                    if len(cl_list) > 0:
+                        sql = """UPDATE clothes
+                                                        SET data = '""" + str(date_now) + """', data_now = '""" + str(
+                            today.date()) + """', list_pic = \"""" + src + """\"
+                                                        WHERE chat_id = '""" + str(chat_id) + """'
+                                                        """
+                        sql_requests(sql)
+                        logging.info(str(chat_id) + ' в базе данных в теблице clothes, данные обновелны')
+                    else:
+                        sql = """INSERT INTO clothes VALUES ('""" + str(
+                            chat_id) + """', '""" + str(date_now) + """' , '""" + str(today.date()) + """',
+                            '""" + src + """', '')"""
+                        sql_requests(sql)
+                        logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите видео и нажимите кнопку Загрузить')
                 bot.register_next_step_handler(msg, send_photo)
@@ -671,5 +683,5 @@ if __name__ == '__main__':
     t2 = threading.Thread(target=check_send_messages)
     # t3 = threading.Thread(target=one_massage)
     t1.start()
-    # t2.start()
+    #t2.start()
     # t3.start()
