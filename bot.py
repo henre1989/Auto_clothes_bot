@@ -8,6 +8,7 @@ from logging import handlers
 from time import sleep
 from d_s import main
 import threading
+import locale
 
 PATH = os.getcwd() + "/settings/"
 f = open(PATH + 'settings.txt', encoding='utf-8')
@@ -40,7 +41,7 @@ class User:
 
 
 def one_massage():
-    sql = "SELECT * FROM car"
+    sql = "SELECT * FROM clothes"
     alll = sql_requests(sql)
     for str_chat_id in alll:
         chat_id = str(str_chat_id[0])
@@ -49,7 +50,12 @@ def one_massage():
         elif chat_id == '':
             continue
         try:
-            bot.send_message(chat_id, 'Здравствуйте. До 3 июля укажите номер свидетельства о регистрации ТС')
+            locale.setlocale(locale.LC_ALL, "ru")
+            today = datetime.today().strftime("%d %b")
+            bot.send_message(chat_id, 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
+                                      'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
+                                      'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
+                                      'произнести данный код. \nКодовое слово на сегодня: '+str(today))
             logging.info(str(chat_id) + ' оповещен')
             sleep(1)
         except Exception as e:
@@ -397,7 +403,7 @@ def check_car_and_clothes(message):
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
-            bot.send_message(chat_id, 'Необходимо снять видео и произнести секретный код и отправить (видео должно '
+            bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (видео должно '
                                       'быть меньше 20 мб). На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
@@ -681,7 +687,7 @@ def start_bot():
 if __name__ == '__main__':
     t1 = threading.Thread(target=start_bot)
     t2 = threading.Thread(target=check_send_messages)
-    # t3 = threading.Thread(target=one_massage)
+    t3 = threading.Thread(target=one_massage)
     t1.start()
     #t2.start()
-    # t3.start()
+    t3.start()
