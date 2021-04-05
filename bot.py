@@ -41,26 +41,44 @@ class User:
 
 
 def one_massage():
-    sql = "SELECT * FROM clothes"
-    alll = sql_requests(sql)
-    for str_chat_id in alll:
-        chat_id = str(str_chat_id[0])
-        if chat_id == 'None':
-            continue
-        elif chat_id == '':
-            continue
-        try:
-            locale.setlocale(locale.LC_ALL,'ru_RU.UTF-8')
-            today = datetime.today().strftime("%d %b")
-            bot.send_message(chat_id, 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
-                                      'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
-                                      'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
-                                      'произнести данный код. \nКодовое слово на сегодня: '+str(today))
-            logging.info(str(chat_id) + ' оповещен')
-            sleep(1)
-        except Exception as e:
-            logging.info(e)
-            logging.info(str(chat_id) + ' заблокировал бота или нет такого пользователя')
+    while True:
+        sql = "SELECT * FROM clothes"
+        alll = sql_requests(sql)
+        f = open(PATH + 'day_clothes.txt', encoding='utf-8')
+        day_message = f.read()
+        today = datetime.now().date()
+        logging.info('Проверка даты для оповещения по одежде ' + str(day_message))
+        logging.info('Сегодня ' + str(today))
+        if day_message == str(today):
+            year = today.isocalendar()[0]
+            week = today.isocalendar()[1] + 8
+            day = today.isocalendar()[-1]
+            if day in [6, 7]:
+                week += 1
+            end_day = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
+            f = open(PATH + 'day_clothes.txt', 'w', encoding='utf-8')
+            f.write(end_day)
+            f.close
+
+        for str_chat_id in alll:
+            chat_id = str(str_chat_id[0])
+            if chat_id == 'None':
+                continue
+            elif chat_id == '':
+                continue
+            try:
+                locale.setlocale(locale.LC_ALL,'ru_RU.UTF-8')
+                today = datetime.today().strftime("%d %b")
+                bot.send_message(chat_id, 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
+                                          'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
+                                          'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
+                                          'произнести данный код. \nКодовое слово на сегодня: '+str(today))
+                logging.info(str(chat_id) + ' оповещен')
+                sleep(1)
+            except Exception as e:
+                logging.info(e)
+                logging.info(str(chat_id) + ' заблокировал бота или нет такого пользователя')
+        sleep(86400)
 
 
 def global_num_sts(message):
@@ -80,7 +98,7 @@ def global_num_sts(message):
 
 
 def check_send_messages():
-    sql = "SELECT * FROM car"
+    sql = "SELECT * FROM employees"
     alll = sql_requests(sql)
     for str_chat_id in alll:
         chat_id = str(str_chat_id[0])
@@ -689,5 +707,5 @@ if __name__ == '__main__':
     t2 = threading.Thread(target=check_send_messages)
     t3 = threading.Thread(target=one_massage)
     t1.start()
-    #t2.start()
+    t2.start()
     t3.start()
