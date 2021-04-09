@@ -9,6 +9,12 @@ from time import sleep
 from d_s import main
 import threading
 import locale
+from telethon import TelegramClient
+import asyncio
+#from agent_cli import main_agent
+
+
+
 
 PATH = os.getcwd() + "/settings/"
 f = open(PATH + 'settings.txt', encoding='utf-8')
@@ -25,7 +31,10 @@ API_TOKEN = (f_line[0].split('=')[1]).strip('\n')
 CATEGORIES = ['Фотоотчёт авто', 'Фотоотчёт по одежде']
 bot = telebot.TeleBot(API_TOKEN)
 user_dict = {}
-
+chat_id_agent = (f_line[0].split('=')[5]).strip('\n')
+id_bot = (f_line[0].split('=')[6]).strip('\n')
+api_id = (f_line[0].split('=')[7]).strip('\n')
+api_hash = (f_line[0].split('=')[8]).strip('\n')
 
 class User:
     def __init__(self, name):
@@ -38,6 +47,22 @@ class User:
         self.date = None
         self.num_STS = None
         self.pic = []
+
+
+async def main_agent(date):
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    client = TelegramClient('settings/bot.session', api_id, api_hash)
+    client.start()
+    chat_id = 582435439
+    messages =await client.get_messages(chat_id)
+    print(messages[0])
+    chat_id_user = messages[0].fwd_from.from_id.user_id
+    type_content = messages[0].media.document.mime_type.split('/')[-1]
+    path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
+    await client.download_media(messages[0], file=path)
+    await client.disconnect()
+    return path
 
 
 def one_massage():
@@ -651,38 +676,47 @@ def send_photo(message):
                 except IOError:
                     pass
                 video = message.video
+                message_id = message.id
                 #до 20 мб
                 size_video = int(video.file_size)/1024/1024
                 if size_video > 20:
-                    msg = bot.reply_to(message, 'Видео больше 20 мб, пожалуйста отправте видео меньшего размера')
-                    bot.register_next_step_handler(msg, send_photo)
+                    # logging.info(chat_id_agent, chat_id, message_id)
+                    bot.forward_message(chat_id_agent, chat_id, message_id)
+                    # bot.send_message(chat_id,
+                    #                  'т.к видео больше 20 мб, будет долгая загрузка видео, ожидайте сообщения об '
+                    #                  'окончании')
+                    asyncio.run(main_agent(date_now))
+                    #src = main_agent(date_now)
+                    bot.delete_message(chat_id, message_id)
+                    # msg = bot.reply_to(message, 'Видео больше 20 мб, пожалуйста отправте видео меньшего размера')
+                    # bot.register_next_step_handler(msg, send_photo)
                 else:
                     logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
                     file_info = bot.get_file(video.file_id)
                     file_name = file_info.file_path.strip('videos')
                     src = Path + '/photo_clothes' + '/' + date_now + file_name
-                    sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
-                    cl_list = sql_requests(sql)
-                    if len(cl_list) > 0:
-                        sql = """UPDATE clothes
-                                                        SET data = '""" + str(date_now) + """', data_now = '""" + str(
-                            today.date()) + """', list_pic = \"""" + src + """\"
-                                                        WHERE chat_id = '""" + str(chat_id) + """'
-                                                        """
-                        sql_requests(sql)
-                        logging.info(str(chat_id) + ' в базе данных в теблице clothes, данные обновелны')
-                    else:
-                        sql = """INSERT INTO clothes VALUES ('""" + str(
-                            chat_id) + """', '""" + str(date_now) + """' , '""" + str(today.date()) + """',
-                            '""" + src + """', '')"""
-                        sql_requests(sql)
-                        logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
+                    downloaded_file = bot.download_file(file_info.file_path)
+                    with open(src, 'wb') as new_file:
+                        new_file.write(downloaded_file)
+                sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
+                cl_list = sql_requests(sql)
+                if len(cl_list) > 0:
+                    sql = """UPDATE clothes
+                                                    SET data = '""" + str(date_now) + """', data_now = '""" + str(
+                        today.date()) + """', list_pic = \"""" + src + """\"
+                                                    WHERE chat_id = '""" + str(chat_id) + """'
+                                                    """
+                    sql_requests(sql)
+                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, данные обновелны')
+                else:
+                    sql = """INSERT INTO clothes VALUES ('""" + str(
+                        chat_id) + """', '""" + str(date_now) + """' , '""" + str(today.date()) + """',
+                        '""" + src + """', '')"""
+                    sql_requests(sql)
+                    logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите видео и нажимите кнопку Загрузить')
                 bot.register_next_step_handler(msg, send_photo)
-        downloaded_file = bot.download_file(file_info.file_path)
-        with open(src, 'wb') as new_file:
-            new_file.write(downloaded_file)
         user.pic.append(src)
         logging.info("файл добавлен " + src)
     except Exception as e:
@@ -707,5 +741,5 @@ if __name__ == '__main__':
     t2 = threading.Thread(target=check_send_messages)
     t3 = threading.Thread(target=one_massage)
     t1.start()
-    t2.start()
-    t3.start()
+    # t2.start()
+    # t3.start()
