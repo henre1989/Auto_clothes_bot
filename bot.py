@@ -682,6 +682,7 @@ def send_photo(message):
                     src = asyncio.run(main_agent(date_now))
                     logging.info('Путь к файлу '+ src)
                     bot.delete_message(chat_id, msg.message_id)
+                    bot.send_message(chat_id, ' Видео обработано нажмите кнопку Загрузить')
                 else:
                     logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
                     file_info = bot.get_file(video.file_id)
