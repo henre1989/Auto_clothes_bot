@@ -407,25 +407,25 @@ def delete_car_from_base(chat_id, car_number):
 @bot.message_handler(commands=['Зaгрузить'])
 def upload_pic_to_drive(message):
     try:
-        today = datetime.now()
-        data_now = today.date()
-        year = today.isocalendar()[0]
-        week = today.isocalendar()[1] - 1
-        day = today.isocalendar()[-1]
-        if day in [6, 7]:
-            week += 1
-        date_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
         chat_id = message.chat.id
         user = user_dict[chat_id]
         if user.name == CATEGORIES[1]:
+            date_now = date_for_chothes()
             bot.send_message(chat_id, 'Видео загружается... подождите несколько секунд')
             table = 'clothes'
             if len(user.pic) == 0:
                 msg = bot.reply_to(message, 'Прикрепите видео и нажмите Загрузить')
                 bot.register_next_step_handler(msg, send_media)
                 return
-
         elif user.name == CATEGORIES[0]:
+            today = datetime.now()
+            data_now = today.date()
+            year = today.isocalendar()[0]
+            week = today.isocalendar()[1] - 1
+            day = today.isocalendar()[-1]
+            if day in [6, 7]:
+                week += 1
+            date_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
             bot.send_message(chat_id, 'Фото загружается... подождите несколько секунд')
             table = 'car'
             if len(user.pic) == 0:
