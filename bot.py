@@ -713,7 +713,7 @@ def send_media():
                 date_now = date_for_chothes()
             except Exception:
                 t = open(PATH + 'folder_clothes.txt', 'w', encoding='utf-8')
-                t.write(today.date())
+                t.write(str(today.date()))
                 t.close()
                 date_now = date_for_chothes()
             if message.content_type == 'video':
