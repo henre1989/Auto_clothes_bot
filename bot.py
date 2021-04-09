@@ -53,7 +53,6 @@ async def main_agent(date):
     await client.start()
     chat_id = int(id_bot)
     messages =await client.get_messages(chat_id)
-    logging.info(messages[0])
     chat_id_user = messages[0].fwd_from.from_id.user_id
     type_content = messages[0].media.document.mime_type.split('/')[-1]
     path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
@@ -387,7 +386,7 @@ def upload_pic_to_drive(message):
         chat_id = message.chat.id
         user = user_dict[chat_id]
         if user.name == "Фотоотчёт по одежде":
-            bot.send_message(chat_id, 'Видео обрабатывается... подождите несколько секунд')
+            bot.send_message(chat_id, 'Видео загружается... подождите несколько секунд')
             table = 'clothes'
             if len(user.pic) == 0:
                 msg = bot.reply_to(message, 'Прикрепите видео и нажмите Загрузить')
@@ -395,7 +394,7 @@ def upload_pic_to_drive(message):
                 return
 
         elif user.name == "Фотоотчёт авто":
-            bot.send_message(chat_id, 'Фото обрабатываются... подождите несколько секунд')
+            bot.send_message(chat_id, 'Фото загружается... подождите несколько секунд')
             table = 'car'
             if len(user.pic) == 0:
                 msg = bot.reply_to(message, 'Прикрепите фото и нажмите Загрузить')
@@ -682,7 +681,7 @@ def send_photo(message):
                     src = asyncio.run(main_agent(date_now))
                     logging.info('Путь к файлу ' + src)
                     bot.delete_message(chat_id_agent, msg.message_id)
-                    bot.send_message(chat_id, ' Видео обработано нажмите кнопку Загрузить')
+                    bot.send_message(chat_id, ' Видео обработано, нажмите кнопку Загрузить')
                 else:
                     logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
                     file_info = bot.get_file(video.file_id)
@@ -691,6 +690,7 @@ def send_photo(message):
                     downloaded_file = bot.download_file(file_info.file_path)
                     with open(src, 'wb') as new_file:
                         new_file.write(downloaded_file)
+                    bot.send_message(chat_id, ' Видео обработано, нажмите кнопку Загрузить')
                 sql = 'SELECT * FROM clothes WHERE chat_id="' + str(chat_id) + '"'
                 cl_list = sql_requests(sql)
                 if len(cl_list) > 0:
