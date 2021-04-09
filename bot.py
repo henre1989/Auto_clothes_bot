@@ -677,17 +677,13 @@ def send_photo(message):
                 #до 20 мб
                 size_video = int(video.file_size)/1024/1024
                 if size_video > 20:
-                    # logging.info(chat_id_agent, chat_id, message_id)
-                    bot.forward_message(chat_id_agent, chat_id, message_id)
-                    # bot.send_message(chat_id,
-                    #                  'т.к видео больше 20 мб, будет долгая загрузка видео, ожидайте сообщения об '
-                    #                  'окончании')
+                    msg = bot.forward_message(chat_id_agent, chat_id, message_id)
+                    logging.info(msg)
                     src = asyncio.run(main_agent(date_now))
                     logging.info('Путь к файлу '+ src)
                     #src = main_agent(date_now)
-                    bot.delete_message(chat_id, message_id)
-                    # msg = bot.reply_to(message, 'Видео больше 20 мб, пожалуйста отправте видео меньшего размера')
-                    # bot.register_next_step_handler(msg, send_photo)
+                    #bot.delete_message(chat_id, message_id)
+
                 else:
                     logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
                     file_info = bot.get_file(video.file_id)
