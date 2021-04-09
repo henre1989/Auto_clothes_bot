@@ -24,7 +24,7 @@ logging.basicConfig(handlers=[handlers.RotatingFileHandler(filename=PATH + "bot.
                     level=logging.INFO)
 
 API_TOKEN = (f_line[0].split('=')[1]).strip('\n')
-CATEGORIES = ['Фотоотчёт авто', 'Фотоотчёт по одежде']
+CATEGORIES = ['Фотоотчёт авто', 'Видеоотчёт по одежде']
 bot = telebot.TeleBot(API_TOKEN)
 user_dict = {}
 chat_id_agent = (f_line[5].split('=')[1]).strip('\n')
@@ -97,9 +97,11 @@ def one_massage():
             if day in [6, 7]:
                 week += 1
             end_day = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
+            logging.info('Дата следующей проверки одежды '+ str(end_day))
             f = open(PATH + 'day_clothes.txt', 'w', encoding='utf-8')
             f.write(end_day)
-            f.close
+            f.close()
+            logging.info('Файл day_clothes.txt перезаписан')
 
             for str_chat_id in alll:
                 chat_id = str(str_chat_id[0])
@@ -405,20 +407,20 @@ def upload_pic_to_drive(message):
         date_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
         chat_id = message.chat.id
         user = user_dict[chat_id]
-        if user.name == "Фотоотчёт по одежде":
+        if user.name == CATEGORIES[1]:
             bot.send_message(chat_id, 'Видео загружается... подождите несколько секунд')
             table = 'clothes'
             if len(user.pic) == 0:
                 msg = bot.reply_to(message, 'Прикрепите видео и нажмите Загрузить')
-                bot.register_next_step_handler(msg, send_photo)
+                bot.register_next_step_handler(msg, send_media)
                 return
 
-        elif user.name == "Фотоотчёт авто":
+        elif user.name == CATEGORIES[0]:
             bot.send_message(chat_id, 'Фото загружается... подождите несколько секунд')
             table = 'car'
             if len(user.pic) == 0:
                 msg = bot.reply_to(message, 'Прикрепите фото и нажмите Загрузить')
-                bot.register_next_step_handler(msg, send_photo)
+                bot.register_next_step_handler(msg, send_media)
                 return
 
         logging.info(str(chat_id) + ' ' + str(user.pic))
@@ -457,7 +459,7 @@ def check_car_and_clothes(message):
     try:
         chat_id = message.chat.id
         name = message.text
-        if name == 'Фотоотчёт по одежде':
+        if name == CATEGORIES[1]:
             user = User(name)
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
@@ -467,7 +469,7 @@ def check_car_and_clothes(message):
                                       'На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
-        elif name == 'Фотоотчёт авто':
+        elif name == CATEGORIES[0]:
             user = User(name)
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
@@ -641,12 +643,12 @@ def Queues(message):
 def working_queeue():
     while True:
         while not q.isEmpty():
-            logging.info('длина очереди для записи в google таблицу ответственных за lead ' + str(q.size()))
-            send_photo()
+            logging.info('длина очереди для записи обработки медиа ' + str(q.size()))
+            send_media()
         sleep(1)
 
 
-def send_photo():
+def send_media():
     try:
         message = q.dequeue()
         path = PATH
@@ -673,7 +675,7 @@ def send_photo():
             os.mkdir(Path)
         except IOError:
             pass
-        if user.category == 'Фотоотчёт авто':
+        if user.category == CATEGORIES[0]:
             logging.info(str(chat_id) + ' категория ' + user.category)
             if message.content_type == 'photo':
                 logging.info(str(chat_id) + ' тип контента ' + message.content_type)
@@ -692,8 +694,8 @@ def send_photo():
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите фотографии и нажимите кнопку '
                                             'Загрузить')
-                bot.register_next_step_handler(msg, send_photo)
-        elif user.category == 'Фотоотчёт по одежде':
+                bot.register_next_step_handler(msg, send_media)
+        elif user.category == CATEGORIES[1]:
             logging.info(str(chat_id) + ' категория ' + user.category)
             if message.content_type == 'video':
                 logging.info(str(chat_id) + ' тип контента ' + message.content_type)
@@ -742,11 +744,11 @@ def send_photo():
                     logging.info(str(chat_id) + ' в базе данных в теблице clothes, занесена новая инфорамция')
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите видео и нажимите кнопку Загрузить')
-                bot.register_next_step_handler(msg, send_photo)
+                bot.register_next_step_handler(msg, send_media)
         user.pic.append(src)
         logging.info("файл добавлен " + src)
     except Exception as e:
-        logging.info(str(chat_id) + ' send_photo ' + str(e))
+        logging.info(str(chat_id) + ' send_media ' + str(e))
         return
 
 

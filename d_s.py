@@ -13,7 +13,7 @@ from time import sleep
 PATH = os.getcwd() + "/settings/"
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SCOPES_SHEETS = ['https://www.googleapis.com/auth/spreadsheets']
-CATEGORY = ["Фотоотчёт по одежде", "Фотоотчёт авто"]
+CATEGORY = ["Видеоотчёт по одежде", "Фотоотчёт авто"]
 
 
 def img_upload_drive(chat_id, id_folder, pics, drive_service):
