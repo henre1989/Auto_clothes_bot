@@ -81,6 +81,11 @@ async def main_agent(date):
     return path
 
 
+def date_for_chothes():
+    t = open(PATH + 'folder_clothes.txt', 'r', encoding='utf-8')
+    return t.read()
+
+
 def one_massage():
     while True:
         sql = "SELECT * FROM clothes"
@@ -101,7 +106,11 @@ def one_massage():
             f = open(PATH + 'day_clothes.txt', 'w', encoding='utf-8')
             f.write(end_day)
             f.close()
+            t = open(PATH + 'folder_clothes.txt', 'w', encoding='utf-8')
+            t.write(end_day)
+            t.close()
             logging.info('Файл day_clothes.txt перезаписан')
+            logging.info('Файл folder_clothes.txt перезаписан')
 
             for str_chat_id in alll:
                 chat_id = str(str_chat_id[0])
@@ -697,6 +706,13 @@ def send_media():
                 bot.register_next_step_handler(msg, send_media)
         elif user.category == CATEGORIES[1]:
             logging.info(str(chat_id) + ' категория ' + user.category)
+            try:
+                date_now = date_for_chothes()
+            except Exception:
+                t = open(PATH + 'folder_clothes.txt', 'w', encoding='utf-8')
+                t.write(today.date())
+                t.close()
+                date_now = date_for_chothes()
             if message.content_type == 'video':
                 logging.info(str(chat_id) + ' тип контента ' + message.content_type)
                 try:
