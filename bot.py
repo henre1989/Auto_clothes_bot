@@ -62,8 +62,8 @@ async def main_agent(date):
     type_content = messages[0].media.document.mime_type.split('/')[-1]
     path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
     await client.download_media(messages[0], file=path)
-    await client.disconnect()
-    return path
+    #await client.disconnect()
+    #return path
 
 
 def one_massage():
