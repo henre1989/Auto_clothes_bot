@@ -33,6 +33,26 @@ api_id = (f_line[7].split('=')[1]).strip('\n')
 api_hash = (f_line[8].split('=')[1]).strip('\n')
 
 
+class Queue:
+    def __init__(self):
+        self.items = []
+
+    def isEmpty(self):
+        return self.items == []
+
+    def enqueue(self, item):
+        self.items.insert(0, item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def size(self):
+        return len(self.items)
+
+q = Queue()
+
+
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -442,8 +462,8 @@ def check_car_and_clothes(message):
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
-            bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (Если видео '
-                                      'больше 20 мб, дождитесь оповещения от бота об окончании обработки видео). '
+            bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (дождитесь '
+                                      'сообщение от бота об окончании обработки видео). '
                                       'На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
@@ -614,8 +634,21 @@ def add_num_sts(message):
 
 
 @bot.message_handler(content_types=['photo', 'video'])
-def send_photo(message):
+def Queues(message):
+    q.enqueue(message)
+
+
+def working_queeue():
+    while True:
+        while not q.isEmpty():
+            logging.info('длина очереди для записи в google таблицу ответственных за lead ' + str(q.size()))
+            send_photo()
+        sleep(1)
+
+
+def send_photo():
     try:
+        message = q.dequeue()
         path = PATH
         chat_id = message.chat.id
         try:
@@ -733,6 +766,8 @@ if __name__ == '__main__':
     t1 = threading.Thread(target=start_bot)
     t2 = threading.Thread(target=check_send_messages)
     t3 = threading.Thread(target=one_massage)
+    t4 = threading.Thread(target=working_queeue)
     t1.start()
     # t2.start()
-    # t3.start()
+    t3.start()
+    t4.start()
