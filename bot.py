@@ -31,10 +31,11 @@ API_TOKEN = (f_line[0].split('=')[1]).strip('\n')
 CATEGORIES = ['Фотоотчёт авто', 'Фотоотчёт по одежде']
 bot = telebot.TeleBot(API_TOKEN)
 user_dict = {}
-chat_id_agent = (f_line[0].split('=')[5]).strip('\n')
-id_bot = (f_line[0].split('=')[6]).strip('\n')
-api_id = (f_line[0].split('=')[7]).strip('\n')
-api_hash = (f_line[0].split('=')[8]).strip('\n')
+chat_id_agent = (f_line[5].split('=')[1]).strip('\n')
+id_bot = (f_line[6].split('=')[1]).strip('\n')
+api_id = (f_line[7].split('=')[1]).strip('\n')
+api_hash = (f_line[8].split('=')[1]).strip('\n')
+
 
 class User:
     def __init__(self, name):
@@ -54,7 +55,7 @@ async def main_agent(date):
     # asyncio.set_event_loop(loop)
     client = TelegramClient('settings/bot.session', api_id, api_hash)
     client.start()
-    chat_id = 582435439
+    chat_id = id_bot
     messages =await client.get_messages(chat_id)
     print(messages[0])
     chat_id_user = messages[0].fwd_from.from_id.user_id
