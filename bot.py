@@ -443,8 +443,9 @@ def check_car_and_clothes(message):
             user_dict[chat_id] = user
             user_dict[chat_id].category = name
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
-            bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (видео должно '
-                                      'быть меньше 20 мб). На нем мы должны четко '
+            bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (Если видео '
+                                      'больше 20 мб, дождитесь оповещения от бота об окончании обработки видео). '
+                                      'На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
         elif name == 'Фотоотчёт авто':
@@ -678,10 +679,9 @@ def send_photo(message):
                 size_video = int(video.file_size)/1024/1024
                 if size_video > 20:
                     msg = bot.forward_message(chat_id_agent, chat_id, message_id)
-                    logging.info(msg)
                     src = asyncio.run(main_agent(date_now))
-                    logging.info('Путь к файлу '+ src)
-                    bot.delete_message(chat_id, msg.message_id)
+                    logging.info('Путь к файлу ' + src)
+                    bot.delete_message(chat_id_agent, msg.message_id)
                     bot.send_message(chat_id, ' Видео обработано нажмите кнопку Загрузить')
                 else:
                     logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
