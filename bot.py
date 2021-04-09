@@ -49,10 +49,11 @@ class User:
 async def main_agent(date):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    client = TelegramClient('settings/bot.session', api_id, api_hash, loop=loop)
+    client = TelegramClient('settings/bot.session', int(api_id), str(api_hash), loop=loop)
     await client.start()
-    chat_id = id_bot
+    chat_id = int(id_bot)
     messages =await client.get_messages(chat_id)
+    logging.info(messages[0])
     chat_id_user = messages[0].fwd_from.from_id.user_id
     type_content = messages[0].media.document.mime_type.split('/')[-1]
     path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
