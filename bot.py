@@ -693,13 +693,16 @@ def send_media():
                 except IOError:
                     pass
                 try:
-                    os.mkdir(Path + '/photo_auto' + '/' + date_now)
+                    os.mkdir(Path + '/photo_auto/' + date_now)
                 except IOError:
                     pass
                 photo = message.photo[-1]
                 file_info = bot.get_file(photo.file_id)
                 file_name = file_info.file_path.strip('photos')
-                src = Path + '/photo_auto' + '/' + date_now + file_name
+                src = Path + '/photo_auto/' + date_now + file_name
+                downloaded_file = bot.download_file(file_info.file_path)
+                with open(src, 'wb') as new_file:
+                    new_file.write(downloaded_file)
             else:
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите фотографии и нажимите кнопку '
                                             'Загрузить')
@@ -720,7 +723,7 @@ def send_media():
                 except IOError:
                     pass
                 try:
-                    os.mkdir(Path + '/photo_clothes' + '/' + date_now)
+                    os.mkdir(Path + '/photo_clothes/' + date_now)
                 except IOError:
                     pass
                 video = message.video
