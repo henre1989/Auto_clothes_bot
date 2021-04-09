@@ -11,10 +11,6 @@ import threading
 import locale
 from telethon import TelegramClient
 import asyncio
-#from agent_cli import main_agent
-
-
-
 
 PATH = os.getcwd() + "/settings/"
 f = open(PATH + 'settings.txt', encoding='utf-8')
@@ -51,19 +47,18 @@ class User:
 
 
 async def main_agent(date):
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    client = TelegramClient('settings/bot.session', api_id, api_hash)
-    client.start()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    client = TelegramClient('settings/bot.session', api_id, api_hash, loop=loop)
+    await client.start()
     chat_id = id_bot
     messages =await client.get_messages(chat_id)
-    print(messages[0])
     chat_id_user = messages[0].fwd_from.from_id.user_id
     type_content = messages[0].media.document.mime_type.split('/')[-1]
     path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
     await client.download_media(messages[0], file=path)
-    #await client.disconnect()
-    #return path
+    await client.disconnect()
+    return path
 
 
 def one_massage():
@@ -686,7 +681,8 @@ def send_photo(message):
                     # bot.send_message(chat_id,
                     #                  'т.к видео больше 20 мб, будет долгая загрузка видео, ожидайте сообщения об '
                     #                  'окончании')
-                    asyncio.run(main_agent(date_now))
+                    src = asyncio.run(main_agent(date_now))
+                    logging.info('Путь к файлу '+ src)
                     #src = main_agent(date_now)
                     bot.delete_message(chat_id, message_id)
                     # msg = bot.reply_to(message, 'Видео больше 20 мб, пожалуйста отправте видео меньшего размера')
