@@ -93,7 +93,7 @@ def one_massage():
         f.close()
         today = datetime.now().date()
         logging.info('Проверка даты для оповещения по одежде ' + str(day_message))
-        logging.info('Сегодня ' + str(today) + str(today.hour) + ' часов')
+        logging.info('Сегодня ' + str(today) + ' ' + str(today.hour) + ' часов')
         if day_message == str(today):
             if today.hour == 13:
                 year = today.isocalendar()[0]
