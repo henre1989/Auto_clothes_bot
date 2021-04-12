@@ -393,6 +393,7 @@ def check_car_number(chat_id, message):
 def delete_car_from_base(chat_id, car_number):
     try:
         sql = "SELECT * FROM car WHERE car_number='" + str(car_number) + "'"
+        logging.info(str(chat_id) + ' ' + sql)
         alll = sql_requests(sql)
         cars = len(alll)
         car_in_base = alll
@@ -609,9 +610,10 @@ def delete_duplicate_in_base(chat_id):
 def add_data_in_car_resp(car_number, city):
     try:
         logging.info(car_number + ' ' + city)
-        sql = 'SELECT city FROM car_responsible WHERE car_number="' + car_number
-        count_cars = len(sql_requests(sql))
-        if count_cars > 0:
+        sql = 'SELECT city FROM car_responsible WHERE car_number="' + car_number + '"'
+        logging.info(sql_requests(sql))
+        count_cars = sql_requests(sql)
+        if len(count_cars) > 0:
             sql = """ UPDATE car_responsible SET city = """ + city + """ WHERE car_number = '""" + car_number + """' """
             sql_requests(sql)
             logging.info('обновил данные в базе car_responsible')
@@ -653,7 +655,7 @@ def add_num_sts(message):
             logging.info(str(chat_id) + ' добовление в базу car успешно')
             sql = 'SELECT city FROM employees WHERE chat_id="' + str(chat_id) + '"'
             logging.info(sql)
-            city = sql_requests(sql)[0][0]
+            city = sql_requests(sql)
             logging.info(city)
             add_data_in_car_resp(user.car_number, city)
             bot.send_message(chat_id, (
