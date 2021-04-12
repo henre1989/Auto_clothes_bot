@@ -606,6 +606,23 @@ def delete_duplicate_in_base(chat_id):
         logging.info(str(chat_id) + ' Записей не найдено в талице car')
 
 
+def add_data_in_car_resp(car_number, city):
+    try:
+        logging.info(car_number + ' ' + city)
+        sql = 'SELECT city FROM car_responsible WHERE car_number="' + car_number
+        count_cars = len(sql_requests(sql))
+        if count_cars > 0:
+            sql = """ UPDATE car_responsible SET city = """ + city + """ WHERE car_number = '""" + car_number + """' """
+            sql_requests(sql)
+            logging.info('обновил данные в базе car_responsible')
+        else:
+            sql = """INSERT INTO car_responsible VALUES ('""" + car_number + """', '""" + city + """')"""
+            sql_requests(sql)
+            logging.info('добавил данные в базе car_responsible')
+    except Exception as e:
+        logging.info('add_data_in_car_resp ' + str(e))
+
+
 def add_num_sts(message):
     try:
         chat_id = message.chat.id
@@ -628,10 +645,14 @@ def add_num_sts(message):
                 week += 1
             user.date = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
             delete_car_from_base(chat_id, user.car_number)
+
             sql = ("""INSERT INTO car VALUES ('""" + str(
                 chat_id) + """', '""" + user.model + """', '""" + user.car_number + """', '""" + user.date + """',
                  '""" + str(data_now) + """', '""""""', '""""""', '""" + user.num_STS + """')""")
             sql_requests(sql)
+            sql = 'SELECT city FROM employees WHERE chat_id="' + str(chat_id) + '"'
+            city = sql_requests(sql)[0][0]
+            add_data_in_car_resp(user.car_number, city)
             bot.send_message(chat_id, (
                 'Модель авто: {}\n Гос номер авто: {}\n Номер СТС: {}\n Дата: {}\n ').format(
                 user.model,
@@ -795,6 +816,6 @@ if __name__ == '__main__':
     t3 = threading.Thread(target=one_massage)
     t4 = threading.Thread(target=working_queeue)
     t1.start()
-    # t2.start()
+    t2.start()
     t3.start()
     t4.start()
