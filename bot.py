@@ -412,9 +412,10 @@ def upload_pic_to_drive(message):
     try:
         chat_id = message.chat.id
         user = user_dict[chat_id]
+        today = datetime.now()
+        data = today.date()
         if user.name == CATEGORIES[1]:
-            date_now = date_for_chothes()
-            logging.info(date_now)
+            data_now = date_for_chothes()
             bot.send_message(chat_id, 'Видео загружается... подождите несколько секунд')
             table = 'clothes'
             if len(user.pic) == 0:
@@ -422,14 +423,12 @@ def upload_pic_to_drive(message):
                 bot.register_next_step_handler(msg, send_media)
                 return
         elif user.name == CATEGORIES[0]:
-            today = datetime.now()
-            data_now = today.date()
             year = today.isocalendar()[0]
             week = today.isocalendar()[1] - 1
             day = today.isocalendar()[-1]
             if day in [6, 7]:
                 week += 1
-            date_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
+            data_now = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
             bot.send_message(chat_id, 'Фото загружается... подождите несколько секунд')
             table = 'car'
             if len(user.pic) == 0:
@@ -438,7 +437,6 @@ def upload_pic_to_drive(message):
                 return
 
         logging.info(str(chat_id) + ' ' + str(user.pic))
-
         sql = """
         UPDATE """ + table + """ 
         SET list_pic = \"""" + str(user.pic) + """\"
@@ -446,7 +444,7 @@ def upload_pic_to_drive(message):
             """
         sql_d = """
             UPDATE """ + table + """ 
-            SET data = '""" + str(date_now) + """'
+            SET data = '""" + str(data) + """'
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_d_n = """
@@ -455,8 +453,11 @@ def upload_pic_to_drive(message):
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_requests(sql)
+        logging.info('sql ок')
         sql_requests(sql_d)
+        logging.info('sql_d ок')
         sql_requests(sql_d_n)
+        logging.info('sql_d_n ок')
         main(chat_id, user.name)
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
         keyboard.add(*[types.KeyboardButton(name) for name in ['В главное меню']])
