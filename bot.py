@@ -612,7 +612,7 @@ def add_data_in_car_resp(car_number, city):
         logging.info(car_number + ' ' + city)
         sql = 'SELECT city FROM car_responsible WHERE car_number="' + car_number + '"'
         logging.info(sql_requests(sql))
-        count_cars = sql_requests(sql)[0]
+        count_cars = sql_requests(sql)
         if len(count_cars) > 0:
             sql = """ UPDATE car_responsible SET city = """ + city + """ WHERE car_number = '""" + car_number + """' """
             logging.info(sql)
