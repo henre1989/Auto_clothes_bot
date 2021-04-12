@@ -657,7 +657,7 @@ def add_num_sts(message):
             logging.info(str(chat_id) + ' добовление в базу car успешно')
             sql = 'SELECT city FROM employees WHERE chat_id="' + str(chat_id) + '"'
             logging.info(sql)
-            city = sql_requests(sql)
+            city = sql_requests(sql)[0][0]
             logging.info(city)
             add_data_in_car_resp(user.car_number, city)
             bot.send_message(chat_id, (
