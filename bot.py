@@ -82,8 +82,11 @@ async def main_agent(date):
 
 
 def date_for_chothes():
-    t = open(PATH + 'folder_clothes.txt', 'r', encoding='utf-8')
-    return t.read()
+    try:
+        t = open(PATH + 'folder_clothes.txt', 'r', encoding='utf-8')
+        return t.read()
+    except Exception as e:
+        logging.info('date_for_chothes ' + str(e))
 
 
 def one_massage():
@@ -411,6 +414,7 @@ def upload_pic_to_drive(message):
         user = user_dict[chat_id]
         if user.name == CATEGORIES[1]:
             date_now = date_for_chothes()
+            logging.info(date_now)
             bot.send_message(chat_id, 'Видео загружается... подождите несколько секунд')
             table = 'clothes'
             if len(user.pic) == 0:
