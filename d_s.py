@@ -138,7 +138,6 @@ def main(chat_id, report_type):
 
     sheets_service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
     chat_id = [str(chat_id)]
-    logging.info(str(chat_id))
     for chat_id_user in chat_id:
         if report_type == CATEGORY[0]:
             table = 'clothes'
@@ -155,7 +154,7 @@ def main(chat_id, report_type):
             date_user = alll[0][3]
             pices = alll[0][5].split(',')
             nm_folder = str(alll[0][1]) + '-' + alll[0][2]
-            logging.info(str(chat_id) + ' ' + nm_folder + ' для clothes')
+            logging.info(str(chat_id_user) + ' ' + nm_folder + ' для clothes')
         elif report_type == CATEGORY[1]:
             table = 'car'
             parentID = (f_line[2].split('=')[1]).strip('\n')
@@ -171,7 +170,7 @@ def main(chat_id, report_type):
             number_car = alll[0][3]
             pices = alll[0][7].split(',')
             nm_folder = str(alll[0][1]) + '-' + alll[0][2] + '-' + alll[0][3] + '-' + alll[0][4]
-            logging.info(str(chat_id) + ' ' + nm_folder + ' для car')
+            logging.info(str(chat_id_user) + ' ' + nm_folder + ' для car')
         pics = []
         for pic in pices:
             pics.append(pic.strip('[').strip(']').strip(" ").strip("'"))
