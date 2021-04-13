@@ -199,7 +199,7 @@ def main(chat_id, report_type):
                 list_end_folders = []
                 # В папке с датой пусто
                 if len(all_korn_folders) == 0:
-                    logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
+                    logging.info(str(chat_id_user) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
                     file_metadata = {
                         'name': nm_folder,
                         'mimeType': 'application/vnd.google-apps.folder',
@@ -210,9 +210,9 @@ def main(chat_id, report_type):
                     logging.info('Создали папку 158' + str(nm_folder))
                     list_end_folders.append(nm_folder)
                     url = 'https://drive.google.com/open?id=' + id_end_folder
-                    logging.info(str(chat_id) + ' 161 Запускаю функцию загрузки фото на drive')
+                    logging.info(str(chat_id_user) + ' 161 Запускаю функцию загрузки фото на drive')
                     img_upload_drive(chat_id, id_end_folder, pics, drive_service)
-                    logging.info(str(chat_id) + ' 163 Закончил')
+                    logging.info(str(chat_id_user) + ' 163 Закончил')
                 elif len(all_korn_folders) > 0:
                     for korn_folder in all_korn_folders:
                         name_folder_end = korn_folder['name']
@@ -223,9 +223,9 @@ def main(chat_id, report_type):
                                 logging.info('Папка есть ' + str(korn_folder['name']))
                                 url = 'https://drive.google.com/open?id=' + folder_id_last_date
                                 # копируем файлы в конченую папку
-                                logging.info(str(chat_id) + ' 186 Запускаю функцию загрузки на drive')
+                                logging.info(str(chat_id_user) + ' 186 Запускаю функцию загрузки на drive')
                                 img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
-                                logging.info(str(chat_id) + ' 188 Закончил')
+                                logging.info(str(chat_id_user) + ' 188 Закончил')
                                 logging.info(fio)
                         elif report_type == CATEGORY[1]:
                             if number_car in name_folder_end:
@@ -233,14 +233,14 @@ def main(chat_id, report_type):
                                 logging.info('Папка есть ' + str(korn_folder['name']))
                                 url = 'https://drive.google.com/open?id=' + folder_id_last_date
                                 # копируем файлы в конченую папку
-                                logging.info(str(chat_id) + ' 196 Запускаю функцию загрузки на drive')
+                                logging.info(str(chat_id_user) + ' 196 Запускаю функцию загрузки на drive')
                                 img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
-                                logging.info(str(chat_id) + ' 198 Закончил')
+                                logging.info(str(chat_id_user) + ' 198 Закончил')
                                 logging.info(number_car)
                 logging.info(list_end_folders)
                 if report_type == CATEGORY[0]:
                     if not fio in str(list_end_folders):
-                        logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
+                        logging.info(str(chat_id_user) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
                         file_metadata = {
                             'name': nm_folder,
                             'mimeType': 'application/vnd.google-apps.folder',
@@ -250,12 +250,12 @@ def main(chat_id, report_type):
                         id_end_folder = file.get('id')
                         logging.info('Создали папку 211 ' + str(nm_folder))
                         url = 'https://drive.google.com/open?id=' + id_end_folder
-                        logging.info(str(chat_id) + ' 213 Запускаю функцию загрузки на drive')
+                        logging.info(str(chat_id_user) + ' 213 Запускаю функцию загрузки на drive')
                         img_upload_drive(chat_id, id_end_folder, pics, drive_service)
-                        logging.info(str(chat_id) + ' 215 Закончил')
+                        logging.info(str(chat_id_user) + ' 215 Закончил')
                 elif report_type == CATEGORY[1]:
                     if not number_car in str(list_end_folders):
-                        logging.info(str(chat_id) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
+                        logging.info(str(chat_id_user) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
                         file_metadata = {
                             'name': nm_folder,
                             'mimeType': 'application/vnd.google-apps.folder',
@@ -265,9 +265,9 @@ def main(chat_id, report_type):
                         id_end_folder = file.get('id')
                         logging.info('Создали папку 226 ' + str(nm_folder))
                         url = 'https://drive.google.com/open?id=' + id_end_folder
-                        logging.info(str(chat_id) + ' 228 Запускаю функцию загрузки на drive')
+                        logging.info(str(chat_id_user) + ' 228 Запускаю функцию загрузки на drive')
                         img_upload_drive(chat_id, id_end_folder, pics, drive_service)
-                        logging.info(str(chat_id) + ' 230 Закончил')
+                        logging.info(str(chat_id_user) + ' 230 Закончил')
         logging.info(list_name_items)
         logging.info(date_user)
         if not str(date_user) in str(list_name_items):
