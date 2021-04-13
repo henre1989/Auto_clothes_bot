@@ -58,44 +58,44 @@ def sql_requests(sql):
 
 def color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i):
     sheets_service.spreadsheets().batchUpdate(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-              body=
-              {
-                  "requests":
-                      [
-                          {
-                              "repeatCell":
-                                  {
-                                      "cell":
-                                          {
-                                              "userEnteredFormat":
-                                                  {
-                                                      # "horizontalAlignment": 'CENTER',
-                                                      "backgroundColor": {
-                                                          "red": 0.74,
-                                                          "green": 0.93,
-                                                          "blue": 0.71,
-                                                          "alpha": 1.0
-                                                      }
-                                                      # "textFormat":
-                                                      #  {
-                                                      #    "bold": False,
-                                                      #    "fontSize": 10
-                                                      #  }
-                                                  }
-                                          },
-                                      "range":
-                                          {
-                                              "sheetId": sheetId,
-                                              "startRowIndex": i,
-                                              "endRowIndex": i + 1,
-                                              "startColumnIndex": 0,
-                                              "endColumnIndex": 7
-                                          },
-                                      "fields": "userEnteredFormat"
-                                  }
-                          }
-                      ]
-              }).execute()
+                                              body=
+                                              {
+                                                  "requests":
+                                                      [
+                                                          {
+                                                              "repeatCell":
+                                                                  {
+                                                                      "cell":
+                                                                          {
+                                                                              "userEnteredFormat":
+                                                                                  {
+                                                                                      # "horizontalAlignment": 'CENTER',
+                                                                                      "backgroundColor": {
+                                                                                          "red": 0.74,
+                                                                                          "green": 0.93,
+                                                                                          "blue": 0.71,
+                                                                                          "alpha": 1.0
+                                                                                      }
+                                                                                      # "textFormat":
+                                                                                      #  {
+                                                                                      #    "bold": False,
+                                                                                      #    "fontSize": 10
+                                                                                      #  }
+                                                                                  }
+                                                                          },
+                                                                      "range":
+                                                                          {
+                                                                              "sheetId": sheetId,
+                                                                              "startRowIndex": i,
+                                                                              "endRowIndex": i + 1,
+                                                                              "startColumnIndex": 0,
+                                                                              "endColumnIndex": 7
+                                                                          },
+                                                                      "fields": "userEnteredFormat"
+                                                                  }
+                                                          }
+                                                      ]
+                                              }).execute()
 
 
 def main(chat_id, report_type):
@@ -338,11 +338,17 @@ def main(chat_id, report_type):
                     values_title_sh = [['Дата фотоотчёта'], ['Город'], ['Модель'], ['Гос. номер'], ['Номер СТС'],
                                        ['ФИО'],
                                        ['Ссылка на актуальную папку']]
-                    sql = 'SELECT employees.chat_id, employees.city, car.model, car.car_number, employees.fio, ' \
-                          'car.data, ' \
-                          'car.data_now, car.list_pic, car.last_url, car.num_STS ' \
-                          'FROM employees ' \
-                          'JOIN car ON car.chat_id = employees.chat_id'
+                    # sql = 'SELECT employees.chat_id, employees.city, car.model, car.car_number, employees.fio, ' \
+                    #       'car.data, ' \
+                    #       'car.data_now, car.list_pic, car.last_url, car.num_STS ' \
+                    #       'FROM employees ' \
+                    #       'JOIN car ON car.chat_id = employees.chat_id'
+
+                    sql = 'SELECT employees.chat_id, car_responsible.city, car.model, car.car_number, employees.fio, ' \
+                          'car.data, car.data_now, car.list_pic, car.last_url, car.num_STS' \
+                          'FROM car' \
+                          'JOIN car_responsible ON car.car_number = car_responsible.car_number' \
+                          'LEFT OUTER JOIN employees ON car.chat_id = employees.chat_id'
                     line_sql = sql_requests(sql)
                     count_id = len(line_sql)
                     logging.info(str(chat_id) + ' Кол-во записей в базе car ' + str(count_id))
