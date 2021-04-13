@@ -333,11 +333,6 @@ def main(chat_id, report_type):
                     values_title_sh = [['Дата фотоотчёта'], ['Город'], ['Модель'], ['Гос. номер'], ['Номер СТС'],
                                        ['ФИО'],
                                        ['Ссылка на актуальную папку']]
-                    # sql = 'SELECT employees.chat_id, employees.city, car.model, car.car_number, employees.fio, ' \
-                    #       'car.data, ' \
-                    #       'car.data_now, car.list_pic, car.last_url, car.num_STS ' \
-                    #       'FROM employees ' \
-                    #       'JOIN car ON car.chat_id = employees.chat_id'
 
                     sql = 'SELECT employees.chat_id, car_responsible.city, car.model, car.car_number, employees.fio, ' \
                           'car.data, car.data_now, car.list_pic, car.last_url, car.num_STS ' \
