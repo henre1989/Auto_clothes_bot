@@ -19,7 +19,7 @@ CATEGORY = ["Видеоотчёт по одежде", "Фотоотчёт авт
 def img_upload_drive(chat_id, id_folder, pics, drive_service):
     for img in pics:
         name = img.split('/')[-1]
-        logging.info(str(chat_id) + 'Копируем файл ' + str(name))
+        logging.info(str(chat_id[0]) + 'Копируем файл ' + str(name))
         file_path = img
         file_metadata = {
             'name': name,
@@ -29,13 +29,13 @@ def img_upload_drive(chat_id, id_folder, pics, drive_service):
         try:
             drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         except HttpError as err:
-            logging.info(str(chat_id) + err)
+            logging.info(str(chat_id[0]) + err)
             if err.resp.status in [403, 500, 503]:
                 sleep(5)
                 try:
                     drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
                 except HttpError as err:
-                    logging.info(str(chat_id) + err + ' повторно, пропускаем ' + img)
+                    logging.info(str(chat_id[0]) + err + ' повторно, пропускаем ' + img)
                     continue
 
 
@@ -178,7 +178,7 @@ def main(chat_id, report_type):
         query = "'" + parentID + "'" + " in parents"
         results = drive_service.files().list(q=query, pageSize=200, fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
-        logging.info(str(chat_id) + ' ' + 'Кол-во папок id на drive ' + str(len(items)))
+        logging.info(str(chat_id_user) + ' ' + 'Кол-во папок id на drive ' + str(len(items)))
         list_name_items = []
 
         for item in items:
@@ -189,7 +189,7 @@ def main(chat_id, report_type):
             # Если папка с датой есть то сюда:
             if str(date_user) == str(name_folder_drive):
                 folder_name_user_id = item['id']
-                logging.info(str(chat_id) + ' ' + 'Нашел папку в корне ' + str(name_folder_drive))
+                logging.info(str(chat_id_user) + ' ' + 'Нашел папку в корне ' + str(name_folder_drive))
                 # Проверяем есть ли конечная папка в папке с датой
                 query = "'" + str(folder_name_user_id) + "'" + " in parents"
                 results = drive_service.files().list(q=query, pageSize=200,
@@ -271,7 +271,7 @@ def main(chat_id, report_type):
         logging.info(list_name_items)
         logging.info(date_user)
         if not str(date_user) in str(list_name_items):
-            logging.info(str(chat_id) + ' ' + 'Нет ' + str(date_user))
+            logging.info(str(chat_id_user) + ' ' + 'Нет ' + str(date_user))
             # Создаем папки с датой в корневой папке
             file_metadata = {
                 'name': date_user,
@@ -292,9 +292,9 @@ def main(chat_id, report_type):
             folder_name_date_user_id = file.get('id')
             url = 'https://drive.google.com/open?id=' + folder_name_date_user_id
             # копируем файлы в папку конечную
-            logging.info(str(chat_id) + ' 255 Запускаю функцию загрузки на drive')
+            logging.info(str(chat_id_user) + ' 255 Запускаю функцию загрузки на drive')
             img_upload_drive(chat_id, folder_name_date_user_id, pics, drive_service)
-            logging.info(str(chat_id) + ' 257 Закончил')
+            logging.info(str(chat_id_user) + ' 257 Закончил')
 
             # Создаем лист с текущим месецем
             batch_update_spreadsheet_request_body = {
@@ -317,7 +317,7 @@ def main(chat_id, report_type):
                                                                 body=batch_update_spreadsheet_request_body)
             try:
                 request.execute()
-                logging.info(str(chat_id) + 'Создан лист ' + str(date_user))
+                logging.info(str(chat_id_user) + 'Создан лист ' + str(date_user))
             except Exception as e:
                 logging.info(str(chat_id_user) + str(e))
             # Заполняем заголовки
@@ -330,7 +330,7 @@ def main(chat_id, report_type):
                           'JOIN clothes ON clothes.chat_id = employees.chat_id'
                     line_sql = sql_requests(sql)
                     count_id = len(line_sql)
-                    logging.info(str(chat_id) + ' Кол-во записей в базе clothes ' + str(count_id))
+                    logging.info(str(chat_id_user) + ' Кол-во записей в базе clothes ' + str(count_id))
 
                     range_a = '!A1:D1'
                     key = ':D'
@@ -351,7 +351,7 @@ def main(chat_id, report_type):
                           'LEFT OUTER JOIN employees ON car.chat_id = employees.chat_id'
                     line_sql = sql_requests(sql)
                     count_id = len(line_sql)
-                    logging.info(str(chat_id) + ' Кол-во записей в базе car ' + str(count_id))
+                    logging.info(str(chat_id_user) + ' Кол-во записей в базе car ' + str(count_id))
 
                     range_a = '!A1:G1'
                     key = ':G'
@@ -396,7 +396,7 @@ def main(chat_id, report_type):
                             logging.info(line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
                             j += 1
                 logging.info(
-                    str(chat_id) + 'Заполняем заголовок листа ' + str(date_user) + ' и основые данные из базы данных')
+                    str(chat_id_user) + 'Заполняем заголовок листа ' + str(date_user) + ' и основые данные из базы данных')
                 spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=SAMPLE_SPREADSHEET_ID).execute()
                 sheetList = spreadsheet.get('sheets')
                 for sheet in sheetList:
@@ -471,7 +471,7 @@ def main(chat_id, report_type):
                                 str(chat_id[0]) + ' Нашел ФИО ' + str(fio) + ' в табилце ' + str(date_user))
                             values = [[alll[0][4]], [alll[0][1]], [alll[0][2]], [url]]
                             color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i)
-                            logging.info(str(chat_id) + ' Цвет строки ' + str(i + 1) + ' закрашен')
+                            logging.info(str(chat_id_user) + ' Цвет строки ' + str(i + 1) + ' закрашен')
                             range_ = date_user + "!A" + str(i + 1) + ":D" + str(i + 1)
                             sheets_service.spreadsheets().values().batchUpdate(
                                 spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
@@ -482,8 +482,8 @@ def main(chat_id, report_type):
                                          "values": values}
                                     ]
                                 }).execute()
-                            logging.info(str(chat_id) + ' инф в строку ' + str(i + 1) + ' занесена ')
-                            logging.info(str(chat_id) + ' Обновлены данные в листе ' + str(date_user))
+                            logging.info(str(chat_id_user) + ' инф в строку ' + str(i + 1) + ' занесена ')
+                            logging.info(str(chat_id_user) + ' Обновлены данные в листе ' + str(date_user))
                             in_table = True
                             break
                     elif report_type == CATEGORY[1]:
@@ -493,7 +493,7 @@ def main(chat_id, report_type):
                             values = [[alll[0][6]], [alll[0][1]], [alll[0][2]], [alll[0][3]], [alll[0][9]],
                                       [alll[0][4]], [url]]
                             color_raw(sheets_service, SAMPLE_SPREADSHEET_ID, sheetId, i)
-                            logging.info(str(chat_id) + ' Цвет строки ' + str(i + 1) + ' закрашен')
+                            logging.info(str(chat_id_user) + ' Цвет строки ' + str(i + 1) + ' закрашен')
                             sheets_service.spreadsheets().values().batchUpdate(
                                 spreadsheetId=SAMPLE_SPREADSHEET_ID, body={
                                     "valueInputOption": "USER_ENTERED",
@@ -504,8 +504,8 @@ def main(chat_id, report_type):
                                          "values": values}
                                     ]
                                 }).execute()
-                            logging.info(str(chat_id) + ' инф в строку ' + str(i + 1) + ' занесена ')
-                            logging.info(str(chat_id) + ' Обновлены данные в листе ' + str(date_user))
+                            logging.info(str(chat_id_user) + ' инф в строку ' + str(i + 1) + ' занесена ')
+                            logging.info(str(chat_id_user) + ' Обновлены данные в листе ' + str(date_user))
                             in_table = True
                             break
                 except KeyError:
@@ -526,6 +526,6 @@ def main(chat_id, report_type):
                          "values": values}
                     ]
                 }).execute()
-                logging.info(str(chat_id) + ' Записаны новые данные в лист ' + str(date_user))
+                logging.info(str(chat_id_user) + ' Записаны новые данные в лист ' + str(date_user))
         except Exception as e:
             logging.info(str(chat_id_user) + str(e))

@@ -615,13 +615,11 @@ def add_data_in_car_resp(car_number, city):
         count_cars = sql_requests(sql)
         if len(count_cars) > 0:
             sql = """ UPDATE car_responsible SET city = """ + city + """ WHERE car_number = '""" + car_number + """' """
-            logging.info(sql)
             sql_requests(sql)
             logging.info('обновил данные в базе car_responsible')
         else:
             sql = """INSERT INTO car_responsible VALUES ('""" + car_number + """', '""" + city + """')"""
             sql_requests(sql)
-            logging.info(sql)
             logging.info('добавил данные в базе car_responsible')
     except Exception as e:
         logging.info('add_data_in_car_resp ' + str(e))
@@ -656,7 +654,6 @@ def add_num_sts(message):
             sql_requests(sql)
             logging.info(str(chat_id) + ' добовление в базу car успешно')
             sql = 'SELECT city FROM employees WHERE chat_id="' + str(chat_id) + '"'
-            logging.info(sql)
             city = sql_requests(sql)[0][0]
             logging.info(city)
             add_data_in_car_resp(user.car_number, city)
