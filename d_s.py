@@ -345,9 +345,9 @@ def main(chat_id, report_type):
                     #       'JOIN car ON car.chat_id = employees.chat_id'
 
                     sql = 'SELECT employees.chat_id, car_responsible.city, car.model, car.car_number, employees.fio, ' \
-                          'car.data, car.data_now, car.list_pic, car.last_url, car.num_STS' \
-                          'FROM car' \
-                          'JOIN car_responsible ON car.car_number = car_responsible.car_number' \
+                          'car.data, car.data_now, car.list_pic, car.last_url, car.num_STS ' \
+                          'FROM car ' \
+                          'JOIN car_responsible ON car.car_number = car_responsible.car_number ' \
                           'LEFT OUTER JOIN employees ON car.chat_id = employees.chat_id'
                     line_sql = sql_requests(sql)
                     count_id = len(line_sql)
