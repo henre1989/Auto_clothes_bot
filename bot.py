@@ -49,8 +49,8 @@ class Queue:
     def size(self):
         return len(self.items)
 
-q = Queue()
 
+q = Queue()
 
 
 class User:
@@ -72,10 +72,10 @@ async def main_agent(date):
     client = TelegramClient('settings/bot.session', int(api_id), str(api_hash), loop=loop)
     await client.start()
     chat_id = int(id_bot)
-    messages =await client.get_messages(chat_id)
+    messages = await client.get_messages(chat_id)
     chat_id_user = messages[0].fwd_from.from_id.user_id
     type_content = messages[0].media.document.mime_type.split('/')[-1]
-    path = 'settings/' +str(chat_id_user)+'/photo_clothes/'+date+'/1.'+type_content
+    path = 'settings/' + str(chat_id_user) + '/photo_clothes/' + date + '/1.' + type_content
     await client.download_media(messages[0], file=path)
     await client.disconnect()
     return path
@@ -105,7 +105,7 @@ def one_massage():
                 if day in [6, 7]:
                     week += 1
                 end_day = str((datetime.strptime("%d%d%d" % (year, week, 1), "%Y%W%w")).date())
-                logging.info('Дата следующей проверки одежды '+ str(end_day))
+                logging.info('Дата следующей проверки одежды ' + str(end_day))
                 f = open(PATH + 'day_clothes.txt', 'w', encoding='utf-8')
                 f.write(end_day)
                 f.close()
@@ -123,12 +123,13 @@ def one_massage():
                     elif chat_id == '':
                         continue
                     try:
-                        locale.setlocale(locale.LC_ALL,'ru_RU.UTF-8')
+                        locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
                         today = datetime.today().strftime("%d %b")
-                        bot.send_message(chat_id, 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
-                                                  'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
-                                                  'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
-                                                  'произнести данный код. \nКодовое слово на сегодня: '+str(today))
+                        bot.send_message(chat_id,
+                                         'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
+                                         'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
+                                         'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
+                                         'произнести данный код. \nКодовое слово на сегодня: ' + str(today))
                         logging.info(str(chat_id) + ' оповещен')
                         sleep(1)
                     except Exception as e:
@@ -212,10 +213,10 @@ def sql_requests(sql):
 def send_welcome(message):
     try:
         chat_id = message.chat.id
-        logging.info('Зашел ' + str(chat_id))
+        logging.info(str(chat_id) + ' зашел')
         sql = 'SELECT * FROM employees WHERE chat_id="' + str(chat_id) + '"'
         alll = sql_requests(sql)
-        logging.info('Кол-во записей ' + str(chat_id) + ' в базе employees ' + str(len(alll)))
+        logging.info(str(chat_id) + ' Кол-во записей ' + str(chat_id) + ' в базе employees ' + str(len(alll)))
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
         if len(alll) > 0:
             keyboard.add(*[types.KeyboardButton(name) for name in CATEGORIES])
@@ -454,11 +455,8 @@ def upload_pic_to_drive(message):
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_requests(sql)
-        logging.info('sql ок')
         sql_requests(sql_d)
-        logging.info('sql_d ок')
         sql_requests(sql_d_n)
-        logging.info('sql_d_n ок')
         main(chat_id, user.name)
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
         keyboard.add(*[types.KeyboardButton(name) for name in ['В главное меню']])
@@ -611,18 +609,17 @@ def add_data_in_car_resp(car_number, city):
     try:
         logging.info(car_number + ' ' + city)
         sql = 'SELECT city FROM car_responsible WHERE car_number="' + car_number + '"'
-        logging.info(sql_requests(sql))
         count_cars = sql_requests(sql)
         if len(count_cars) > 0:
             sql = """ UPDATE car_responsible SET city = """ + city + """ WHERE car_number = '""" + car_number + """' """
             sql_requests(sql)
-            logging.info('обновил данные в базе car_responsible')
+            logging.info(car_number + ' обновил данные в базе car_responsible')
         else:
             sql = """INSERT INTO car_responsible VALUES ('""" + car_number + """', '""" + city + """')"""
             sql_requests(sql)
-            logging.info('добавил данные в базе car_responsible')
+            logging.info(car_number + ' добавил данные в базе car_responsible')
     except Exception as e:
-        logging.info('add_data_in_car_resp ' + str(e))
+        logging.info(car_number + ' add_data_in_car_resp ' + str(e))
 
 
 def add_num_sts(message):
@@ -655,7 +652,6 @@ def add_num_sts(message):
             logging.info(str(chat_id) + ' добовление в базу car успешно')
             sql = 'SELECT city FROM employees WHERE chat_id="' + str(chat_id) + '"'
             city = sql_requests(sql)[0][0]
-            logging.info(city)
             add_data_in_car_resp(user.car_number, city)
             bot.send_message(chat_id, (
                 'Модель авто: {}\n Гос номер авто: {}\n Номер СТС: {}\n Дата: {}\n ').format(
@@ -759,16 +755,16 @@ def send_media():
                     pass
                 video = message.video
                 message_id = message.id
-                #до 20 мб
-                size_video = int(video.file_size)/1024/1024
+                # до 20 мб
+                size_video = int(video.file_size) / 1024 / 1024
                 if size_video > 20:
                     msg = bot.forward_message(chat_id_agent, chat_id, message_id)
                     src = asyncio.run(main_agent(date_now))
-                    logging.info('Путь к файлу ' + src)
+                    logging.info(str(chat_id) + ' Путь к файлу ' + src)
                     bot.delete_message(chat_id_agent, msg.message_id)
                     bot.send_message(chat_id, ' Видео обработано, нажмите кнопку Загрузить')
                 else:
-                    logging.info(str(chat_id) + 'Размер видео ' + str(size_video))
+                    logging.info(str(chat_id) + ' Размер видео ' + str(size_video))
                     file_info = bot.get_file(video.file_id)
                     file_name = file_info.file_path.strip('videos')
                     src = Path + '/photo_clothes' + '/' + date_now + file_name
@@ -796,7 +792,7 @@ def send_media():
                 msg = bot.reply_to(message, 'Не верный тип контента, загрузите видео и нажимите кнопку Загрузить')
                 bot.register_next_step_handler(msg, send_media)
         user.pic.append(src)
-        logging.info("файл добавлен " + src)
+        logging.info(str(chat_id) + " файл добавлен " + src)
     except Exception as e:
         logging.info(str(chat_id) + ' send_media ' + str(e))
         return

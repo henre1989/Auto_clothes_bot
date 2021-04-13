@@ -177,7 +177,7 @@ def main(chat_id, report_type):
         query = "'" + parentID + "'" + " in parents"
         results = drive_service.files().list(q=query, pageSize=200, fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
-        logging.info(str(chat_id_user) + ' ' + 'Кол-во папок id на drive ' + str(len(items)))
+        logging.info(str(chat_id_user) + ' Кол-во папок id на drive ' + str(len(items)))
         list_name_items = []
 
         for item in items:
@@ -188,13 +188,12 @@ def main(chat_id, report_type):
             # Если папка с датой есть то сюда:
             if str(date_user) == str(name_folder_drive):
                 folder_name_user_id = item['id']
-                logging.info(str(chat_id_user) + ' ' + 'Нашел папку в корне ' + str(name_folder_drive))
+                logging.info(str(chat_id_user) + ' Нашел папку в корне ' + str(name_folder_drive))
                 # Проверяем есть ли конечная папка в папке с датой
                 query = "'" + str(folder_name_user_id) + "'" + " in parents"
                 results = drive_service.files().list(q=query, pageSize=200,
                                                      fields="nextPageToken, files(id, name)").execute()
                 all_korn_folders = results.get('files', [])
-                logging.info(all_korn_folders)
                 list_end_folders = []
                 # В папке с датой пусто
                 if len(all_korn_folders) == 0:
@@ -206,7 +205,7 @@ def main(chat_id, report_type):
                     }
                     file = drive_service.files().create(body=file_metadata, fields='id').execute()
                     id_end_folder = file.get('id')
-                    logging.info('Создали папку 158' + str(nm_folder))
+                    logging.info(str(chat_id_user) + ' Создали папку 158 ' + str(nm_folder))
                     list_end_folders.append(nm_folder)
                     url = 'https://drive.google.com/open?id=' + id_end_folder
                     logging.info(str(chat_id_user) + ' 161 Запускаю функцию загрузки фото на drive')
@@ -219,24 +218,24 @@ def main(chat_id, report_type):
                         if report_type == CATEGORY[0]:
                             if fio in name_folder_end:
                                 folder_id_last_date = korn_folder['id']
-                                logging.info('Папка есть ' + str(korn_folder['name']))
+                                logging.info(str(chat_id_user) + ' Папка есть ' + str(korn_folder['name']))
                                 url = 'https://drive.google.com/open?id=' + folder_id_last_date
                                 # копируем файлы в конченую папку
                                 logging.info(str(chat_id_user) + ' 186 Запускаю функцию загрузки на drive')
                                 img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
                                 logging.info(str(chat_id_user) + ' 188 Закончил')
-                                logging.info(fio)
+                                logging.info(str(chat_id_user) + ' ' + fio)
                         elif report_type == CATEGORY[1]:
                             if number_car in name_folder_end:
                                 folder_id_last_date = korn_folder['id']
-                                logging.info('Папка есть ' + str(korn_folder['name']))
+                                logging.info(str(chat_id_user) + ' Папка есть ' + str(korn_folder['name']))
                                 url = 'https://drive.google.com/open?id=' + folder_id_last_date
                                 # копируем файлы в конченую папку
                                 logging.info(str(chat_id_user) + ' 196 Запускаю функцию загрузки на drive')
                                 img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
                                 logging.info(str(chat_id_user) + ' 198 Закончил')
-                                logging.info(number_car)
-                logging.info(list_end_folders)
+                                logging.info(str(chat_id_user) + ' ' + number_car)
+                logging.info(str(chat_id_user) + ' ' + list_end_folders)
                 if report_type == CATEGORY[0]:
                     if not fio in str(list_end_folders):
                         logging.info(str(chat_id_user) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
@@ -247,7 +246,7 @@ def main(chat_id, report_type):
                         }
                         file = drive_service.files().create(body=file_metadata, fields='id').execute()
                         id_end_folder = file.get('id')
-                        logging.info('Создали папку 211 ' + str(nm_folder))
+                        logging.info(str(chat_id_user) + ' Создали папку 211 ' + str(nm_folder))
                         url = 'https://drive.google.com/open?id=' + id_end_folder
                         logging.info(str(chat_id_user) + ' 213 Запускаю функцию загрузки на drive')
                         img_upload_drive(chat_id, id_end_folder, pics, drive_service)
@@ -262,13 +261,13 @@ def main(chat_id, report_type):
                         }
                         file = drive_service.files().create(body=file_metadata, fields='id').execute()
                         id_end_folder = file.get('id')
-                        logging.info('Создали папку 226 ' + str(nm_folder))
+                        logging.info(str(chat_id_user) + ' Создали папку 226 ' + str(nm_folder))
                         url = 'https://drive.google.com/open?id=' + id_end_folder
                         logging.info(str(chat_id_user) + ' 228 Запускаю функцию загрузки на drive')
                         img_upload_drive(chat_id, id_end_folder, pics, drive_service)
                         logging.info(str(chat_id_user) + ' 230 Закончил')
-        logging.info(list_name_items)
-        logging.info(date_user)
+        logging.info(str(chat_id_user) + ' ' + list_name_items)
+        logging.info(str(chat_id_user) + ' ' + date_user)
         if not str(date_user) in str(list_name_items):
             logging.info(str(chat_id_user) + ' ' + 'Нет ' + str(date_user))
             # Создаем папки с датой в корневой папке
@@ -384,15 +383,15 @@ def main(chat_id, report_type):
                                                                        }).execute()
                     sleep(1)
                     if report_type == CATEGORY[0]:
-                        logging.info(line[1] + ' ' + line[2])
+                        logging.info(str(chat_id_user) + ' ' + line[1] + ' ' + line[2])
                         j += 1
 
                     elif report_type == CATEGORY[1]:
                         if line[4] is None:
-                            logging.info(line[1] + ' ' + line[2] + ' ' + line[3])
+                            logging.info(str(chat_id_user) + ' ' + line[1] + ' ' + line[2] + ' ' + line[3])
                             j += 1
                         else:
-                            logging.info(line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
+                            logging.info(str(chat_id_user) + ' ' + line[1] + ' ' + line[2] + ' ' + line[3] + ' ' + line[4])
                             j += 1
                 logging.info(
                     str(chat_id_user) + 'Заполняем заголовок листа ' + str(date_user) + ' и основые данные из базы данных')
@@ -508,7 +507,7 @@ def main(chat_id, report_type):
                             in_table = True
                             break
                 except KeyError:
-                    logging.info('Пустая ячейка ' + range_)
+                    logging.info(str(chat_id_user) + ' Пустая ячейка ' + range_)
                     break
             if in_table is False:
                 if report_type == CATEGORY[0]:
