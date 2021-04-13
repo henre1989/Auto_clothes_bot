@@ -445,12 +445,12 @@ def upload_pic_to_drive(message):
             """
         sql_d = """
             UPDATE """ + table + """ 
-            SET data = '""" + str(data) + """'
+            SET data = '""" + str(data_now) + """'
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_d_n = """
             UPDATE """ + table + """ 
-            SET data_now = '""" + str(data_now) + """'
+            SET data_now = '""" + str(data) + """'
             WHERE chat_id = '""" + str(chat_id) + """'
             """
         sql_requests(sql)
