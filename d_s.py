@@ -265,8 +265,6 @@ def main(chat_id, report_type):
                         logging.info(str(chat_id_user) + ' 228 Запускаю функцию загрузки на drive')
                         img_upload_drive(chat_id, id_end_folder, pics, drive_service)
                         logging.info(str(chat_id_user) + ' 230 Закончил')
-        logging.info(str(chat_id_user) + ' ' + list_name_items)
-        logging.info(str(chat_id_user) + ' ' + date_user)
         if not str(date_user) in str(list_name_items):
             logging.info(str(chat_id_user) + ' ' + 'Нет ' + str(date_user))
             # Создаем папки с датой в корневой папке
