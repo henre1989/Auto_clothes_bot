@@ -19,7 +19,7 @@ CATEGORY = ["Видеоотчёт по одежде", "Фотоотчёт авт
 def img_upload_drive(chat_id, id_folder, pics, drive_service):
     for img in pics:
         name = img.split('/')[-1]
-        logging.info(str(chat_id[0]) + 'Копируем файл ' + str(name))
+        logging.info(str(chat_id[0]) + ' Копируем файл ' + str(name))
         file_path = img
         file_metadata = {
             'name': name,
@@ -235,7 +235,6 @@ def main(chat_id, report_type):
                                 img_upload_drive(chat_id, folder_id_last_date, pics, drive_service)
                                 logging.info(str(chat_id_user) + ' 198 Закончил')
                                 logging.info(str(chat_id_user) + ' ' + number_car)
-                logging.info(str(chat_id_user) + ' ' + list_end_folders)
                 if report_type == CATEGORY[0]:
                     if not fio in str(list_end_folders):
                         logging.info(str(chat_id_user) + ' ' + 'Нет корневой папки в ' + str(name_folder_drive))
