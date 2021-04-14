@@ -98,7 +98,7 @@ def one_massage():
         logging.info('Проверка даты для оповещения по одежде ' + str(day_message))
         logging.info('Сегодня ' + str(today) + ' ' + str(datetime.now().hour) + ' часов')
         if day_message == str(today):
-            if today.hour == 13:
+            if today.hour == 11:
                 year = today.isocalendar()[0]
                 week = today.isocalendar()[1] + 8
                 day = today.isocalendar()[-1]
@@ -479,7 +479,7 @@ def check_car_and_clothes(message):
             user_dict[chat_id].category = name
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
             bot.send_message(chat_id, 'Необходимо снять видео и произнести кодовое слово и отправить (дождитесь '
-                                      'сообщение от бота об окончании обработки видео). '
+                                      'сообщение от бота об окончании обработки видео, нажмите кнопку Загрузить). '
                                       'На нем мы должны четко '
                                       'видеть поло/флис/ветровка или зимнюю куртку, в зависимости от погоды!',
                              reply_markup=keyboard)
