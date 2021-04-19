@@ -235,10 +235,11 @@ def send_welcome(message):
 
 @bot.message_handler(commands=['sendcode'])
 def send_code_clothes(message):
-    f.open(PATH + 'code.txt', 'r', encoding='utf-8')
+    f.open(PATH + 'code.txt', encoding='utf-8')
     main_chat = f.readlines()
+    logging.info(main_chat)
     chat_id = message.chat.id
-    if chat_id in main_chat:
+    if str(chat_id) in main_chat:
         logging.info(str(chat_id) + ' отправитель команды /sendcode')
         sql = "SELECT * FROM clothes"
         alll = sql_requests(sql)
