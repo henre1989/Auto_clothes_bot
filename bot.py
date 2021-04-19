@@ -235,7 +235,7 @@ def send_welcome(message):
 
 @bot.message_handler(commands=['sendcode'])
 def send_code_clothes(message):
-    f.open(PATH + 'code.txt', encoding='utf-8')
+    f = open(PATH + 'code.txt', encoding='utf-8')
     main_chat = f.readlines()
     logging.info(main_chat)
     chat_id = message.chat.id
