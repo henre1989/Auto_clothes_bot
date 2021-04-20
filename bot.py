@@ -239,29 +239,30 @@ def send_code_clothes(message):
     main_chat = f.readlines()
     logging.info(main_chat)
     chat_id = message.chat.id
-    if str(chat_id) in main_chat:
-        logging.info(str(chat_id) + ' отправитель команды /sendcode')
-        sql = "SELECT * FROM clothes"
-        alll = sql_requests(sql)
-        for str_chat_id in alll:
-            chat_id = str(str_chat_id[0])
-            if chat_id == 'None':
-                continue
-            elif chat_id == '':
-                continue
-            try:
-                locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
-                today = datetime.today().strftime("%d %b")
-                bot.send_message(chat_id,
-                                 'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
-                                 'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
-                                 'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
-                                 'произнести данный код. \nКодовое слово на сегодня: ' + str(today))
-                logging.info(str(chat_id) + ' оповещен')
-                sleep(1)
-            except Exception as e:
-                logging.info(e)
-                logging.info(str(chat_id) + ' заблокировал бота или нет такого пользователя')
+    for line in main_chat:
+        if str(chat_id) == line.strip('\\n'):
+            logging.info(str(chat_id) + ' отправитель команды /sendcode')
+            sql = "SELECT * FROM clothes"
+            alll = sql_requests(sql)
+            for str_chat_id in alll:
+                chat_id = str(str_chat_id[0])
+                if chat_id == 'None':
+                    continue
+                elif chat_id == '':
+                    continue
+                try:
+                    locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+                    today = datetime.today().strftime("%d %b")
+                    bot.send_message(chat_id,
+                                     'Для того, что бы понимать в каком состоянии у вас корпоративная одежда и '
+                                     'одели ли вы ее в принципе, 5-6 раз в год будет приходить сообщение в Telegram с '
+                                     'произвольным кодовым словом. Вам, в течение часа, необходимо снять видео и '
+                                     'произнести данный код. \nКодовое слово на сегодня: ' + str(today))
+                    logging.info(str(chat_id) + ' оповещен')
+                    sleep(1)
+                except Exception as e:
+                    logging.info(e)
+                    logging.info(str(chat_id) + ' заблокировал бота или нет такого пользователя')
 
 
 
