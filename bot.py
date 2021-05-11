@@ -71,7 +71,7 @@ async def main_agent(date):
     asyncio.set_event_loop(loop)
     client = TelegramClient('settings/bot.session', int(api_id), str(api_hash), loop=loop)
     await client.start()
-    chat_id = int(id_bot)
+    chat_id = str(id_bot)
     messages = await client.get_messages(chat_id)
     chat_id_user = messages[0].fwd_from.from_id.user_id
     type_content = messages[0].media.document.mime_type.split('/')[-1]
