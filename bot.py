@@ -377,7 +377,7 @@ def check_data_about_car(message):
             keyboard.add(*[types.KeyboardButton(name) for name in ['/Зaгрузить']])
             photo = open(PATH + 'basic_photo.jpg', 'rb')
             today = datetime.now()
-            week = today.isocalendar()[1] - 1
+            week = today.isocalendar()[1] 
             day = today.isocalendar()[-1]
             if day in [6, 7]:
                 week += 1
@@ -460,7 +460,7 @@ def upload_pic_to_drive(message):
                 return
         elif user.name == CATEGORIES[0]:
             year = today.isocalendar()[0]
-            week = today.isocalendar()[1] - 1
+            week = today.isocalendar()[1] 
             day = today.isocalendar()[-1]
             if day in [6, 7]:
                 week += 1
@@ -672,7 +672,7 @@ def add_num_sts(message):
             today = datetime.now()
             data_now = today.date()
             year = today.isocalendar()[0]
-            week = today.isocalendar()[1] - 1
+            week = today.isocalendar()[1] 
             day = today.isocalendar()[-1]
             if day in [6, 7]:
                 week += 1
@@ -736,7 +736,7 @@ def send_media():
         Path = path + str(chat_id)
         today = datetime.now()
         year = today.isocalendar()[0]
-        week = today.isocalendar()[1] - 1
+        week = today.isocalendar()[1] 
         day = today.isocalendar()[-1]
         if day in [6, 7]:
             week += 1
